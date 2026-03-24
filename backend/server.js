@@ -11,7 +11,7 @@ const dashboardRoutes = require("./routes/dashboardRoutes");
 
 const app = express();
 
-const allowedOrigin = process.env.CLIENT_URL;
+const allowedOrigin = process.env.CLIENT_URL || "http://localhost:5173";
 
 app.use(
   cors({
@@ -19,6 +19,7 @@ app.use(
     credentials: true,
     methods: ["GET", "POST", "PUT", "DELETE"],
     allowedHeaders: ["Content-Type", "Authorization"],
+    optionsSuccessStatus: 200, // For preflight compatibility
   })
 );
 
