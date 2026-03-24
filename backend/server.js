@@ -11,8 +11,6 @@ const dashboardRoutes = require("./routes/dashboardRoutes");
 
 const app = express();
 
-/* ========= CORS ========= */
-
 const allowedOrigin = process.env.CLIENT_URL;
 
 app.use(
@@ -24,16 +22,14 @@ app.use(
   })
 );
 
-/* ========= MIDDLEWARE ========= */
+/* MIDDLEWARE */
 
 app.use(express.json());
 app.use(cookieParser());
 
-/* ========= DATABASE ========= */
-
 connectDB();
 
-/* ========= ROUTES ========= */
+/*ROUTES */
 
 app.get("/", (req, res) => {
   res.send("Hello Express");
@@ -48,13 +44,11 @@ const reminderRoutes = require("./routes/reminderRoutes");
 app.use("/api/v1/goals", goalRoutes);
 app.use("/api/v1/reminders", reminderRoutes);
 
-/* ========= DEV SERVER ========= */
+/* DEV SERVER */
 
-if (process.env.NODE_ENV !== "production") {
-  const PORT = process.env.PORT || 5000;
-  app.listen(PORT, () =>
-    console.log(`Server running on port ${PORT}`)
-  );
-}
+const PORT = process.env.PORT || 5000;
+app.listen(PORT, () =>
+  console.log(`Server running on port ${PORT}`)
+);
 
 module.exports = app;
