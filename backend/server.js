@@ -11,17 +11,37 @@ const dashboardRoutes = require("./routes/dashboardRoutes");
 
 const app = express();
 
-const allowedOrigin = process.env.CLIENT_URL || "http://localhost:5173";
+const allowedOrigins = [
+  process.env.CLIENT_URL,
+  "https://expansemate.onrender.com",
+  "https://expansemate.onrender.com/",
+  "http://localhost:5173"
+];
 
 app.use(
   cors({
-    origin: allowedOrigin,
+    origin: (origin, callback) => {
+      // Allow requests with no origin (like mobile apps or curl)
+      if (!origin) return callback(null, true);
+      if (allowedOrigins.indexOf(origin) !== -1 || allowedOrigins.indexOf(origin + "/") !== -1) {
+        callback(null, true);
+      } else {
+        console.log("CORS Rejected for origin:", origin);
+        callback(new Error("Not allowed by CORS"));
+      }
+    },
     credentials: true,
-    methods: ["GET", "POST", "PUT", "DELETE"],
+    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allowedHeaders: ["Content-Type", "Authorization"],
-    optionsSuccessStatus: 200, // For preflight compatibility
+    optionsSuccessStatus: 200
   })
 );
+
+// Global Request Logger to debug 404s
+app.use((req, res, next) => {
+  console.log(`${new Date().toISOString()} - ${req.method} ${req.url}`);
+  next();
+});
 
 /* MIDDLEWARE */
 
