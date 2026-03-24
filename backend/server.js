@@ -16,15 +16,30 @@ const allowedOrigins = [
   "https://expansemate.onrender.com/",
   process.env.CLIENT_URL,
   "http://localhost:5173"
-].filter(Boolean); // Remove undefined/null
+].filter(Boolean);
 
 app.use(
   cors({
-    origin: allowedOrigins,
+    origin: (origin, callback) => {
+      // Allow requests with no origin (like mobile apps or curl requests)
+      if (!origin || allowedOrigins.includes(origin) || allowedOrigins.includes(origin + "/")) {
+        callback(null, true);
+      } else {
+        console.error(`CORS Error: Origin ${origin} not allowed`);
+        callback(new Error("Not allowed by CORS"));
+      }
+    },
     credentials: true,
     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-    allowedHeaders: ["Content-Type", "Authorization"],
-    optionsSuccessStatus: 200
+    allowedHeaders: [
+      "Content-Type",
+      "Authorization",
+      "X-Requested-With",
+      "Accept",
+      "Origin",
+    ],
+    exposedHeaders: ["Set-Cookie"],
+    optionsSuccessStatus: 200,
   })
 );
 

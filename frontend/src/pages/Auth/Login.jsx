@@ -86,6 +86,8 @@ const Login = () => {
         label="Password"
         placeholder="Min 8 characters"
         type="password" 
+        name="password"
+        autoComplete="current-password"
         />
 
         <div className="text-right -mt-4 mb-4">

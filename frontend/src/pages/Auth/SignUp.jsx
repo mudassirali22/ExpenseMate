@@ -110,6 +110,8 @@ const SignUp = () => {
         label="Password"
         placeholder="Min 8 characters"
         type="password" 
+        name="password"
+        autoComplete="new-password"
         />
         </div>
        
