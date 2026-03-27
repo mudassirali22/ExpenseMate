@@ -13,22 +13,13 @@ const app = express();
 
 const allowedOrigins = [
   "https://expansemate.onrender.com",
-  "https://expansemate.onrender.com/",
   process.env.CLIENT_URL,
   "http://localhost:5173"
 ].filter(Boolean);
 
 app.use(
   cors({
-    origin: (origin, callback) => {
-      // Allow requests with no origin (like mobile apps or curl requests)
-      if (!origin || allowedOrigins.includes(origin) || allowedOrigins.includes(origin + "/")) {
-        callback(null, true);
-      } else {
-        console.error(`CORS Error: Origin ${origin} not allowed`);
-        callback(new Error("Not allowed by CORS"));
-      }
-    },
+    origin: allowedOrigins,
     credentials: true,
     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allowedHeaders: [
@@ -42,6 +33,8 @@ app.use(
     optionsSuccessStatus: 200,
   })
 );
+
+app.options("*", cors()); // Explicitly handle pre-flight requests for all routes
 
 // Global Request Logger to debug 404s
 app.use((req, res, next) => {
