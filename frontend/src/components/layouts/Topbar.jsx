@@ -143,9 +143,9 @@ const Topbar = ({ onMenuClick, isSidebarOpen }) => {
                 initial={{ opacity: 0, scale: 0.95, y: 10, x: 20 }}
                 animate={{ opacity: 1, scale: 1, y: 0, x: 0 }}
                 exit={{ opacity: 0, scale: 0.95, y: 10, x: 20 }}
-                className="absolute right-0 mt-2 w-[320px] sm:w-[380px] bg-surface-container-high/90 backdrop-blur-2xl border border-glass-border rounded-3xl shadow-[0_20px_60px_-15px_rgba(0,0,0,0.5)] overflow-hidden z-[100]"
+                className="absolute right-0 mt-2 w-[320px] sm:w-[380px] bg-surface-container-high border border-glass-border rounded-3xl shadow-[0_20px_60px_-15px_rgba(0,0,0,0.5)] overflow-hidden z-[100]"
               >
-                <div className="p-4 border-b border-glass-border flex justify-between items-center bg-surface-container-highest/50">
+                <div className="p-4 border-b border-glass-border flex justify-between items-center bg-surface-container-highest">
                   <h3 className="text-xs font-black text-on-surface uppercase tracking-[0.2em]">Notifications</h3>
                   {unreadCount > 0 && (
                     <button onClick={() => handleMarkRead('all')} className="text-[10px] font-bold text-primary hover:underline transition-all">Mark all as read</button>
@@ -187,7 +187,7 @@ const Topbar = ({ onMenuClick, isSidebarOpen }) => {
                   )}
                 </div>
 
-                <div className="p-3 bg-surface-container-highest/50 border-t border-glass-border text-center">
+                <div className="p-3 bg-surface-container-highest border-t border-glass-border text-center">
                   <p className="text-[9px] font-black text-on-surface-variant uppercase tracking-widest opacity-40">Press ESC to dismiss</p>
                 </div>
               </motion.div>

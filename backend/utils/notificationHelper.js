@@ -31,7 +31,7 @@ const createNotification = async (userId, { type, message, link = "", senderId =
     }
 
     //Time-based Throttling for Insight/Automated categories
-    const throttledCategories = ['marketing', 'budget', 'monthly', 'system', 'security'];
+    const throttledCategories = ['marketing', 'budget', 'monthly', 'system', 'security', 'goal', 'wallet'];
     if (throttledCategories.includes(category)) {
       const cooldownPeriod = 12 * 60 * 60 * 1000;
       const recentNotification = await Notification.findOne({

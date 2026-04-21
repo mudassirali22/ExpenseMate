@@ -5,6 +5,7 @@ const Portfolio = require("../models/Portfolio");
 const Subscription = require("../models/Subscription");
 const SharedWallet = require("../models/SharedWallet");
 const Budget = require("../models/Budget");
+const Goal = require("../models/Goal");
 const { createNotification } = require("../utils/notificationHelper");
 
 const getDashboardStats = async (req, res)=>{
@@ -12,14 +13,15 @@ try {
     const userId = req.user.id;
 
     // Fetch all data points
-    const [incomes, expenses, taxPayments, portfolio, subscriptions, sharedWallets, budgets] = await Promise.all([
+    const [incomes, expenses, taxPayments, portfolio, subscriptions, sharedWallets, budgets, goals] = await Promise.all([
       Income.find({ user: userId }),
       Expense.find({ user: userId }),
       TaxPayment.find({ user: userId }),
       Portfolio.find({ user: userId }),
       Subscription.find({ user: userId }),
       SharedWallet.find({ $or: [{ createdBy: userId }, { "members.user": userId }, { "members.email": req.user.email }] }),
-      Budget.find({ user: userId })
+      Budget.find({ user: userId }),
+      Goal.find({ user: userId })
     ]);
 
     // Calculate Subscription Impact
@@ -132,6 +134,42 @@ try {
                 message: `Subscription Renewal: Your '${sub.name}' plan renews in ${daysDiff === 0 ? 'today' : daysDiff + ' days'}.`,
                 link: "/subscriptions",
                 category: "monthly"
+              });
+            }
+          }
+        }
+
+        // 5. Saving Goals Insight (Deadlines)
+        if (goals && goals.length > 0) {
+          const today = new Date();
+          today.setHours(0, 0, 0, 0);
+          
+          for (const goal of goals) {
+            const deadline = new Date(goal.deadline);
+            deadline.setHours(0, 0, 0, 0);
+            const daysDiff = Math.ceil((deadline - today) / (1000 * 60 * 60 * 24));
+            
+            if (daysDiff === 0 || daysDiff === 1) {
+              const timeframe = daysDiff === 0 ? "today" : "tomorrow";
+              await createNotification(userId, {
+                type: "ACTION",
+                message: `Goal Deadline: Your saving goal '${goal.name}' is due ${timeframe}!`,
+                link: "/savings",
+                category: "goal"
+              });
+            }
+          }
+        }
+
+        // 6. Shared Wallet Insight (Pool Funded)
+        if (sharedWallets && sharedWallets.length > 0) {
+          for (const wallet of sharedWallets) {
+            if (wallet.targetBudget > 0 && wallet.totalBalance >= wallet.targetBudget) {
+              await createNotification(userId, {
+                type: "ACTION",
+                message: `Cluster Complete: The '${wallet.name}' wallet is now fully funded!`,
+                link: "/shared-wallets",
+                category: "wallet"
               });
             }
           }
