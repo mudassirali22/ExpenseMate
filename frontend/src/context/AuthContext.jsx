@@ -109,7 +109,7 @@ export const AuthProvider = ({ children }) => {
       SAR: '﷼',
       SGD: 'S$',
       CHF: 'Fr',
-      MYR: 'RM'     
+      MYR: 'RM'
     };
     return symbols[user?.currency] || symbols.PKR;
   }, [user?.currency]);
