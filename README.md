@@ -84,7 +84,7 @@ ExpenseMate isn't just an expense tracker—it's an entire ecosystem for your mo
 | **Database & ORM** | MongoDB + Mongoose |
 | **Security & Auth** | JSON Web Tokens (JWT), BcryptJS, Cookie-Parser, Google OAuth Library |
 | **AI Integration** | Google Generative AI (Gemini SDK)|
-| **Media Cloud Storage** | Cloudinary , Multer 2.0, Streamifier |
+| **Media Cloud Storage** | Cloudinary , Multer , Streamifier |
 | **Data Import/Export** | ExcelJS |
 | **Email Services** | Nodemailer |
 
