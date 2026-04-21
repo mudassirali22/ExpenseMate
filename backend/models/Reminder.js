@@ -10,6 +10,10 @@ const ReminderSchema = new mongoose.Schema({
     type: String,
     required: true,
   },
+  description: {
+    type: String,
+    default: ""
+  },
   isCompleted: {
     type: Boolean,
     default: false,
@@ -21,8 +25,24 @@ const ReminderSchema = new mongoose.Schema({
   },
   category: {
     type: String,
-    enum: ["Personal", "Work", "Urgent", "Other"],
+    enum: ["Personal", "Work", "Finance", "Ideas", "Urgent", "Important", "Strategy", "Travel", "Other"],
     default: "Personal"
+  },
+  dueDate: {
+    type: Date,
+    default: null
+  },
+  dueTime: {
+    type: String,
+    default: null
+  },
+  amount: {
+    type: Number,
+    default: null
+  },
+  notified: {
+    type: Boolean,
+    default: false
   }
 }, { timestamps: true });
 

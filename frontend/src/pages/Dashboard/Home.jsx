@@ -1,712 +1,368 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from "react-router-dom";
-import ExpenseEditModal from "./ExpenseEditModal";
-import IncomeEditModal from "./IncomeEditModal";
-import { 
-  LayoutDashboard, Wallet, CreditCard, LogOut, ArrowUpRight, 
-  ArrowDownLeft, Menu, X, TrendingUp, History, ChevronRight, Download, UploadCloud,
-  Settings as SettingsIcon, Calculator as CalcIcon, RefreshCcw, Bell, ArrowRightLeft, Lightbulb
-} from 'lucide-react';
-import { PieChart, Pie, Cell, ResponsiveContainer, Tooltip } from 'recharts';
-import { toast } from 'react-hot-toast';
+import { Link, useNavigate } from 'react-router-dom';
+import { useAuth } from '../../context/AuthContext';
+import { TrendingUp, TrendingDown, Wallet, ShoppingCart, Target, Bot, ArrowRight, Activity, FileText, CreditCard, Users, Search, X, ArrowUpRight, Plus, BarChart3, ShieldCheck, Wrench } from 'lucide-react';
+import QuickAddModal from '../../components/common/QuickAddModal';
 
-import Expense from "./Expense"; 
-import AddIncome from "./AddIncome";
-import ExpenseTable from './ExpenseTable';
-import IncomeTable from './IncomeTable';
-import ProfileSettings from './ProfileSettings';
-import Calculator from './Calculator';
-import CurrencyConverter from './CurrencyConverter';
-import Reminders from './Reminders';
-
-const ResponsiveDashboard = () => {
-  const [isSidebarOpen, setSidebarOpen] = useState(false);
-  const fileInputRef = React.useRef(null);
-  const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState("dashboard");
-  const navigate = useNavigate();
-  const [expenses, setExpenses] = useState([]);
-  const [editingExpense, setEditingExpense] = useState(null);
-  const [incomes, setIncomes] = useState([]);
-  const [editingIncome, setEditingIncome] = useState(null);
+const Home = () => {
+  const { user, API, currencySymbol } = useAuth();
   const [stats, setStats] = useState({});
-  const [user, setUser] = useState(null);
+  const [expenses, setExpenses] = useState([]);
+  const [incomes, setIncomes] = useState([]);
   const [goals, setGoals] = useState([]);
+  const [activities, setActivities] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const navigate = useNavigate();
+  const [logSearchQuery, setLogSearchQuery] = useState('');
+  const [isQuickAddOpen, setIsQuickAddOpen] = useState(false);
 
   useEffect(() => {
-    checkAuth();
-    refreshData();
-  }, []);
+    const fetchData = async () => {
+      setLoading(true);
+      try {
+        const [statsRes, expRes, incRes, goalRes, actRes] = await Promise.all([
+          fetch(`${API}/api/v1/dashboard/stats`, { credentials: 'include' }),
+          fetch(`${API}/api/v1/expenses/get`, { credentials: 'include' }),
+          fetch(`${API}/api/v1/income/getIncome`, { credentials: 'include' }),
+          fetch(`${API}/api/v1/goals/get`, { credentials: 'include' }),
+          fetch(`${API}/api/v1/dashboard/activities?limit=100`, { credentials: 'include' })
+        ]);
 
- const refreshData = () => {
-  fetchExpenses();
-  fetchIncome();
-  fetchStats();
-  fetchGoals();
-};
+        const [statsData, expData, incData, goalData, actData] = await Promise.all([
+          statsRes.json(), expRes.json(), incRes.json(), goalRes.json(), actRes.json()
+        ]);
 
-
-  const checkAuth = async () => {
-    try {
-      const response = await fetch(
-         `${import.meta.env.VITE_BACKEND_URL}/api/v1/auth/me`,
-         { method: "GET", credentials: "include" });
-      if (!response.ok) throw new Error("Not authenticated");
-      const data = await response.json(); 
-      setUser(data); 
-      setLoading(false);
-    } catch (error) {
-      localStorage.removeItem("token");
-      navigate("/login");
-    }
-  };
-
-  const fetchExpenses = async () => {
-    try {
-      const res = await fetch(
-        `${import.meta.env.VITE_BACKEND_URL}/api/v1/expenses/get`,
-         { credentials: "include" });
-      const data = await res.json();
-      setExpenses(data);
-    } catch (err) { console.log(err); }
-  };
-
-  const deleteExpense = async (id) => {
-    try {
-      const res = await fetch(
-         `${import.meta.env.VITE_BACKEND_URL}/api/v1/expenses/delete/${id}`,
-         { method: "DELETE", credentials: "include" });
-      if (!res.ok) throw new Error("Delete failed");
-      setExpenses((prev) => prev.filter((item) => item._id !== id));
-      toast.success("Expense Deleted");
-    } catch (error) { 
-        console.log(error); 
-        toast.error("Failed to delete");
-    }
-  };
-
-  const updateExpense = async (updatedData) => {
-    try {
-      const res = await fetch(
-                 `${import.meta.env.VITE_BACKEND_URL}/api/v1/expenses/update/${updatedData._id}`,
-         {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
-        body: JSON.stringify(updatedData),
-      });
-      if (!res.ok) throw new Error("Update failed");
-      const data = await res.json();
-      setExpenses((prev) => prev.map((item) => item._id === data._id ? data : item));
-      setEditingExpense(null);
-      toast.success("Updated Successfully");
-    } catch (error) { 
-        console.log(error); 
-        toast.error("Update failed");
-    }
-  };
-
-  const handleLogout = async () => {
-     try {
-      await fetch(
-        `${import.meta.env.VITE_BACKEND_URL}/api/v1/auth/logout`,
-         { method: "POST", credentials: "include" });
-      
-      localStorage.removeItem("token");
-      toast.success("Logged out successfully");
-      navigate('/login');
-     } catch (error) { console.log("Logout Error:", error); }
-  }
-
-  const fetchIncome = async () => {
-    try {
-      const res = await fetch(
-        `${import.meta.env.VITE_BACKEND_URL}/api/v1/income/getIncome`,
-         { credentials: "include" });
-      const data = await res.json();
-      setIncomes(data);
-    } catch (err) { console.log(err); }
-  };
-
-  const deleteIncome = async (id) => {
-    try {
-      const res = await fetch(
-         `${import.meta.env.VITE_BACKEND_URL}/api/v1/income/delete/${id}`,
-         { method: "DELETE", credentials: "include" });
-      if (!res.ok) throw new Error("Delete failed");
-      setIncomes((prev) => prev.filter((item) => item._id !== id));
-      toast.success("Income Deleted");
-    } catch (error) { 
-        console.log(error); 
-        toast.error("Failed to delete");
-    }
-  };
-
-  const updateIncome = async (updatedData) => {
-    try {
-      const res = await fetch(
-                 `${import.meta.env.VITE_BACKEND_URL}/api/v1/income/update/${updatedData._id}`,
-         {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
-        body: JSON.stringify(updatedData),
-      });
-      if (!res.ok) throw new Error("Update failed");
-      const data = await res.json();
-      setIncomes((prev) => prev.map((item) => item._id === data._id ? data : item));
-      setEditingIncome(null);
-      toast.success("Updated Successfully");
-    } catch (error) { 
-        console.log(error); 
-        toast.error("Update failed");
-    }
-  };
-
-  const fetchStats = async () => {
-    try {
-      const res = await fetch(
-        `${import.meta.env.VITE_BACKEND_URL}/api/v1/dashboard/stats`,
-         { credentials: "include" });
-      const data = await res.json();
-      setStats(data);
-    } catch (err) { console.log(err); }
-  };
-
-  const fetchGoals = async () => {
-    try {
-      const res = await fetch(
-        `${import.meta.env.VITE_BACKEND_URL}/api/v1/goals/get`,
-         { credentials: "include" });
-      const data = await res.json();
-      setGoals(data);
-    } catch (err) { console.log(err); }
-  };
-
-  const handleExport = async () => {
-    const loadingToast = toast.loading("Preparing export...");
-    try {
-      const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/v1/dashboard/export`, {
-        method: "GET",
-        credentials: "include",
-      });
-      if (!response.ok) throw new Error("Export failed");
-      const blob = await response.blob();
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = "ExpanseMate_Transactions.xlsx";
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
-      window.URL.revokeObjectURL(url);
-      toast.success("Transactions exported successfully!", { id: loadingToast });
-    } catch (error) {
-      console.error(error);
-      toast.error("Failed to export transactions", { id: loadingToast });
-    }
-  };
-
-  const handleImport = async (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
-
-    const loadingToast = toast.loading("Processing import...");
-    const formData = new FormData();
-    formData.append("file", file);
-
-    try {
-      const response = await fetch(`${import.meta.env.VITE_BACKEND_URL}/api/v1/dashboard/import`, {
-        method: "POST",
-        credentials: "include",
-        body: formData,
-      });
-      if (!response.ok) throw new Error("Import failed");
-      const data = await response.json();
-      
-      // Add a small delay to ensure database operations are complete
-      await new Promise(resolve => setTimeout(resolve, 500));
-      
-      refreshData();
-      
-      if (data.errors && data.errors.length > 0) {
-        toast.error(`Import completed with ${data.errors.length} errors. Check console for details.`, { id: loadingToast });
-      } else {
-        toast.success(`Successfully imported ${data.importedIncomes} incomes and ${data.importedExpenses} expenses!`, { id: loadingToast });
+        setStats(statsData);
+        setExpenses(Array.isArray(expData) ? expData : []);
+        setIncomes(Array.isArray(incData) ? incData : []);
+        setGoals(Array.isArray(goalData) ? goalData : []);
+        setActivities(Array.isArray(actData?.activities) ? actData.activities : (statsData.recentActivity || []));
+      } catch (err) {
+        console.error("Dashboard Fetch Error:", err);
+      } finally {
+        setLoading(false);
       }
-    } catch (error) {
-      console.error(error);
-      toast.error("Failed to import transactions", { id: loadingToast });
-    } finally {
-      e.target.value = null; // Reset input
-    }
-  };
+    };
+    fetchData();
+  }, [API]);
+
+  const totalBalance = stats.totalBalance || 0;
+  const totalIncome = stats.totalIncome || 0;
+  const totalExpense = stats.totalExpense || 0;
+  const totalTaxPaid = stats.totalTaxPaid || 0;
+  const aggregateExpense = totalExpense + totalTaxPaid;
+  const savingsRate = totalIncome > 0 ? (((totalIncome - aggregateExpense) / totalIncome) * 100).toFixed(1) : 0;
+
+  const categoryTotals = {};
+  expenses.forEach(exp => {
+    categoryTotals[exp.category] = (categoryTotals[exp.category] || 0) + exp.amount;
+  });
+
+  const topCategories = Object.entries(categoryTotals)
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 3);
+
+  const [activityFilter, setActivityFilter] = useState('All');
+  const totalAllocated = Object.values(categoryTotals).reduce((a, b) => a + b, 0) || 1;
 
   if (loading) {
     return (
-      <div className="h-screen flex items-center justify-center bg-[#f8fafc]">
-        <div className="flex flex-col items-center gap-4">
-          <div className="w-12 h-12 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin"></div>
-          <div className="text-center">
-            <p className="text-sm font-black text-slate-800 tracking-widest uppercase mb-1">ExpanseMate</p>
-            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Initializing Dashboard</p>
-          </div>
-        </div>
+      <div className="page-container flex items-center justify-center min-h-[60vh]">
+        <div className="w-10 h-10 border-4 border-primary border-t-transparent rounded-full animate-spin" />
       </div>
     );
   }
 
-  const DashboardHome = () => {
-    const chartData = [
-      { name: 'Expenses', value: stats.totalExpense || 0, color: '#f43f5e' },
-      { name: 'Income', value: stats.totalIncome || 0, color: '#10b981' },
-      { name: 'Balance', value: stats.totalBalance || 0, color: '#6366f1' },
-    ];
+  const filteredActivity = activities.filter(item => {
+    if (logSearchQuery) {
+      const q = logSearchQuery.toLowerCase();
+      const t = item.title?.toLowerCase() || '';
+      const c = item.category?.toLowerCase() || '';
+      const a = item.amount?.toString() || '';
+      if (!t.includes(q) && !c.includes(q) && !a.includes(q)) return false;
+    }
 
-    const activeGoal = goals.length > 0 ? goals[0] : null;
-    const goalTarget = activeGoal ? activeGoal.targetAmount : 10000;
-    const goalCurrent = activeGoal ? activeGoal.currentAmount : 0;
-    const goalName = activeGoal ? activeGoal.name : "Savings Goal";
-    const goalProgress = Math.min(Math.round((goalCurrent / goalTarget) * 100), 100);
-    const goalRemaining = Math.max(goalTarget - goalCurrent, 0);
-
-    return (
-      <div className="p-6 lg:p-10 max-w-7xl mx-auto space-y-10 animate-fade-in-up">
-        {/* Welcome Header */}
-        <header className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <div>
-            <h2 className="text-3xl font-extrabold text-slate-900 tracking-tight">Financial Overview</h2>
-            <p className="text-slate-500 font-medium tracking-tight">Welcome back, {user?.fullName?.split(' ')[0] || 'User'}! Ready to manage your finances?</p>
-          </div>
-          <div className="flex gap-3">
-            <input 
-              type="file" 
-              accept=".xlsx, .xls" 
-              className="hidden" 
-              ref={fileInputRef} 
-              onChange={handleImport} 
-            />
-            <button 
-              onClick={() => fileInputRef.current?.click()}
-              className="glass-panel text-slate-700 px-5 py-2.5 rounded-xl font-bold text-xs hover:bg-white transition-all flex items-center gap-2 border-slate-100"
-            >
-              <UploadCloud size={16} /> Import
-            </button>
-            <button 
-              onClick={handleExport}
-              className="glass-panel text-slate-700 px-5 py-2.5 rounded-xl font-bold text-xs hover:bg-white transition-all flex items-center gap-2 hidden sm:flex border-slate-100"
-            >
-              <Download size={16} /> Export
-            </button>
-            <button 
-              onClick={() => setActiveTab('expense')}
-              className="bg-slate-900 text-white px-5 py-2.5 rounded-xl font-bold text-xs hover:bg-slate-800 transition-all flex items-center gap-2 shadow-xl shadow-slate-200"
-            >
-              <ArrowDownLeft size={16} /> Add Expense
-            </button>
-          </div>
-        </header>
-
-        {/* Stats Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-          <StatCard 
-            title="Total Balance"
-            amount={stats.totalBalance || 0}
-            icon={<Wallet className="text-indigo-600" />}
-            trend="Live"
-            color="indigo"
-          />
-          <StatCard 
-            title="Total Income"
-            amount={stats.totalIncome || 0}
-            icon={<TrendingUp className="text-emerald-600" />}
-            trend="Active"
-            color="emerald"
-          />
-          <StatCard 
-            title="Total Expenses"
-            amount={stats.totalExpense || 0}
-            icon={<ArrowUpRight className="text-rose-600" />}
-            trend="Tracked"
-            color="rose"
-          />
-        </div>
-
-        {/* Visual Analytics */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          <div className="lg:col-span-2 glass-panel p-8 flex flex-col justify-center items-center relative overflow-hidden group">
-            <div className="absolute top-6 left-8">
-              <h3 className="text-sm font-black text-slate-800 uppercase tracking-widest">Distribution</h3>
-              <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Asset Allocation</p>
-            </div>
-            <div className="w-full h-80">
-              <ResponsiveContainer width="100%" height="100%">
-                <PieChart>
-                  <Tooltip 
-                    contentStyle={{ borderRadius: '24px', border: 'none', boxShadow: '0 20px 25px -5px rgba(0,0,0,0.1)', padding: '16px' }}
-                  />
-                  <Pie 
-                    data={chartData} 
-                    dataKey="value" 
-                    innerRadius="65%" 
-                    outerRadius="85%" 
-                    paddingAngle={8} 
-                    cornerRadius={12}
-                    animationDuration={1500}
-                  >
-                    {chartData.map((entry, index) => (
-                      <Cell key={index} fill={entry.color} className="outline-none" />
-                    ))}
-                  </Pie>
-                </PieChart>
-              </ResponsiveContainer>
-              <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 text-center pointer-events-none mt-4">
-                <span className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Net Worth</span>
-                <p className="text-3xl font-black text-slate-900 tracking-tighter">Rs {stats.totalBalance?.toLocaleString() || 0}</p>
-              </div>
-            </div>
-          </div>
-
-          <FinancialHealthScore income={stats.totalIncome || 0} expense={stats.totalExpense || 0} />
-        </div>
-
-        {/* Intelligence & Activity Row */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-           <IntelligenceBox />
-           <div className="space-y-6">
-              <div className="bg-linear-to-br from-indigo-600 to-indigo-700 rounded-[2.5rem] p-8 text-white relative overflow-hidden shadow-2xl shadow-indigo-100 group">
-                 {activeGoal ? (
-                   <div className="relative z-10">
-                     <div className="flex justify-between items-start mb-4">
-                       <h4 className="text-indigo-100 text-xs font-black uppercase tracking-widest">{goalName}</h4>
-                       <span className="bg-white/10 px-3 py-1 rounded-full text-[10px] font-black">{goalProgress}%</span>
-                     </div>
-                     <p className="text-4xl font-black mb-6 tracking-tighter">Progress Tracker</p>
-                     <div className="w-full bg-white/10 h-4 rounded-full mb-3 p-1">
-                       <div className="bg-white h-full rounded-full transition-all duration-[1500ms] shadow-[0_0_15px_rgba(255,255,255,0.4)]" style={{width: `${goalProgress}%`}}></div>
-                     </div>
-                     <p className="text-xs font-bold text-indigo-100 flex items-center gap-2">
-                       {goalRemaining > 0 ? (
-                         <>Target: Rs {goalTarget?.toLocaleString()} <ArrowRightLeft size={10} className="opacity-50" /> Left: Rs {goalRemaining?.toLocaleString()}</>
-                       ) : 'Target achieved! 🎉 Excellence unlocked.'}
-                     </p>
-                   </div>
-                 ) : (
-                   <div className="relative z-10 text-center py-4">
-                     <h4 className="text-indigo-100 text-xs font-black uppercase tracking-widest mb-2">Savings Goal</h4>
-                     <p className="text-2xl font-black mb-4 tracking-tighter">Plan Your Future</p>
-                     <button onClick={() => setActiveTab('profile')} className="px-5 py-2.5 bg-white/10 hover:bg-white/20 rounded-xl text-xs font-bold transition-all">Set a Savings Goal</button>
-                   </div>
-                 )}
-                 <div className="absolute -right-20 -bottom-20 w-64 h-64 bg-white/10 rounded-full blur-3xl group-hover:scale-125 transition-transform duration-1000"></div>
-              </div>
-              
-              <div className="glass-panel p-8 relative overflow-hidden group">
-                 <div className="flex items-center justify-between mb-6">
-                   <h4 className="text-sm font-black text-slate-800 uppercase tracking-widest flex items-center gap-2">
-                     <History size={16} className="text-indigo-600" /> Recent Transactions
-                   </h4>
-                   <button onClick={() => setActiveTab('allExpense')} className="text-[10px] font-black text-indigo-600 hover:text-indigo-700 uppercase tracking-widest">See All</button>
-                 </div>
-                 <div className="space-y-4">
-                   {[...expenses].slice(0, 4).map((exp, i) => (
-                     <div key={i} className="flex justify-between items-center p-3 hover:bg-slate-50 rounded-2xl transition-all border border-transparent hover:border-slate-100 group/item">
-                       <div className="flex items-center gap-3">
-                         <div className="w-10 h-10 bg-slate-50 group-hover/item:bg-white rounded-xl flex items-center justify-center text-slate-400 group-hover/item:text-rose-500 font-bold transition-colors">
-                           <CreditCard size={18} />
-                         </div>
-                         <div>
-                           <p className="text-xs font-black text-slate-700">{exp.description || exp.title}</p>
-                           <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">{new Date(exp.date).toLocaleDateString('en-US', { day: 'numeric', month: 'short' })} • {exp.category}</p>
-                         </div>
-                       </div>
-                       <span className="text-sm font-black text-rose-500">-Rs {exp.amount?.toLocaleString()}</span>
-                     </div>
-                   ))}
-                   {expenses.length === 0 && (
-                      <div className="text-center py-6">
-                         <p className="text-xs font-bold text-slate-400 uppercase">No recent activity</p>
-                      </div>
-                   )}
-                 </div>
-              </div>
-           </div>
-        </div>
-      </div>
-    );
-  };
+    if (activityFilter === 'All') return true;
+    if (activityFilter === 'Income') return item.type === 'income';
+    if (activityFilter === 'Expense') return item.type === 'expense' && item.displayType !== 'Tax' && item.displayType !== 'Subscription' && item.displayType !== 'Shared';
+    if (activityFilter === 'Tax') return item.displayType === 'Tax';
+    if (activityFilter === 'Investment') return item.type === 'portfolio';
+    return true;
+  });
 
   return (
-    <div className="flex min-h-screen bg-[#fcfdfe] font-sans text-slate-900 selection:bg-indigo-100 selection:text-indigo-900">
-      {isSidebarOpen && (
-        <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-40 lg:hidden transition-all duration-500"
-          onClick={() => setSidebarOpen(false)}
-        />
-      )}
-
-      <aside className={`fixed inset-y-0 left-0 w-72 bg-white border-r border-slate-50 p-8 transition-all duration-500 
-        lg:translate-x-0 lg:static z-50 flex flex-col
-        ${isSidebarOpen ? "translate-x-0" : "-translate-x-full"}
-      `}>
-        <div className="mb-12 flex items-center justify-between">
-          <div className="flex items-center gap-4 px-2">
-            <div className="w-10 h-10 bg-indigo-600 rounded-[1rem] flex items-center justify-center shadow-2xl shadow-indigo-100">
-              <LayoutDashboard className="text-white" size={22} />
-            </div>
-            <span className="text-xl font-black text-slate-800 tracking-tighter">ExpanseMate</span>
+    <div className="page-container animate-fade-in-up pb-20">
+      <div className="page-header flex flex-col md:flex-row justify-between items-start md:items-end gap-6 mb-8">
+        <div>
+          <div className="flex items-center gap-2 mb-1">
+            <Activity size={14} className="text-secondary" />
+            <span className="text-xs font-semibold uppercase tracking-wider text-on-surface-variant opacity-80">Overview</span>
           </div>
-          <button className="lg:hidden p-2 text-slate-400" onClick={() => setSidebarOpen(false)}><X size={20}/></button>
+          <h1 className="page-title text-3xl sm:text-4xl font-bold tracking-tight">Dashboard</h1>
+          <p className="page-subtitle text-sm mt-1">All your money and expenses in one simple place.</p>
         </div>
+        <div className="flex flex-wrap gap-2 w-full md:w-auto">
+          <Link to="/transactions" className="btn btn-primary px-4 flex-1 md:flex-none justify-center font-bold text-[10px] uppercase tracking-widest bg-surface-lowest border-glass-border shadow-sm transition-all hover:bg-surface-container hover:text-primary hover:border-primary/80 hover:border-1 hover:border-solid">
+            <Activity size={14} className="mr-1" /> Transactions
+          </Link>
+          <Link to="/analytics" className="btn btn-outline px-4 flex-1 md:flex-none justify-center font-bold text-[10px] uppercase tracking-widest bg-surface-lowest border-glass-border shadow-sm transition-all hover:bg-surface-container">
+            <BarChart3 size={14} className="mr-1" /> Analytics
+          </Link>
+          <Link to="/tools" className="btn btn-outline px-4 flex-1 md:flex-none justify-center font-bold text-[10px] uppercase tracking-widest bg-surface-lowest border-glass-border shadow-sm transition-all hover:bg-surface-container">
+            <Wrench size={14} className="mr-1" /> Tools
+          </Link>
+        </div>
+      </div>
 
-        {user && (
-          <div onClick={() => setActiveTab('profile')} className="mb-10 bg-slate-50/50 p-4 rounded-[1.8rem] flex items-center gap-4 border border-slate-100/50 cursor-pointer hover:bg-slate-50 transition-all group">
-            <div className="w-11 h-11 rounded-[1.2rem] overflow-hidden shadow-sm bg-indigo-100 flex-shrink-0 group-hover:rotate-6 transition-transform">
-              {user?.profileImageUrl ? (
-                <img 
-                  src={user.profileImageUrl} 
-                  alt="Profile" 
-                  className="w-full h-full object-cover"
-                  onError={(e) => {
-                    e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(user.fullName)}&background=6366f1&color=fff`;
-                  }}
-                />
-              ) : (
-                <div className="w-full h-full flex items-center justify-center bg-indigo-600 text-white font-black text-lg">
-                  {user.fullName?.charAt(0)}
+      <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-8">
+        <div className="md:col-span-2 stat-card bg-surface-container/10 border-primary/20 relative overflow-hidden flex flex-col justify-between hover:border-primary/40 transition-colors !p-5">
+          <div className="absolute top-0 right-0 w-32 h-32 bg-primary/5 blur-3xl rounded-full -mr-8 -mt-8" />
+          <div className="relative z-10 flex flex-col h-full justify-between">
+            <div>
+              <p className="stat-label">Total Balance</p>
+              <div className="flex items-end gap-3 mt-0.5">
+                <h3 className="text-2xl sm:text-3xl font-bold text-on-surface tracking-tight">{currencySymbol} {totalBalance.toLocaleString()}</h3>
+                <div className={`flex items-center font-bold text-[10px] px-2 py-1 rounded-md mb-1 ${Number(savingsRate) >= 0 ? 'text-success bg-success/10' : 'text-error bg-error/10'}`}>
+                  {Number(savingsRate) >= 0 ? <TrendingUp size={12} className="mr-1" /> : <TrendingDown size={12} className="mr-1" />}
+                  {Math.abs(savingsRate)}% Saved
                 </div>
-              )}
-            </div>
-            <div className="flex-1 min-w-0">
-              <p className="text-xs font-black truncate text-slate-800 tracking-tight">{user.fullName}</p>
-              <div className="flex items-center gap-1.5">
-                 <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse"></span>
-                 <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Active session</p>
               </div>
             </div>
+            <div className="flex items-center gap-6 mt-4 pt-4 border-t border-glass-border/50">
+              <div className="flex flex-col">
+                <span className="text-[10px] font-semibold text-on-surface-variant uppercase tracking-wider opacity-70">Monthly Income</span>
+                <span className="text-xs font-semibold text-success">{currencySymbol} {totalIncome.toLocaleString()}</span>
+              </div>
+              <div className="w-px h-5 bg-glass-border" />
+              <div className="flex flex-col">
+                <span className="text-[10px] font-semibold text-on-surface-variant uppercase tracking-wider opacity-70">Monthly Expense</span>
+                <span className="text-xs font-semibold text-error">{currencySymbol} {totalExpense.toLocaleString()}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="stat-card flex flex-col justify-center hover:border-success/30 transition-colors !p-5">
+          <div className="flex justify-between items-start mb-2">
+            <p className="stat-label mb-0">Total Income</p>
+            <div className="w-8 h-8 rounded-lg bg-success/10 flex items-center justify-center text-success"><Wallet size={16} /></div>
+          </div>
+          <h4 className="text-xl sm:text-2xl font-bold text-on-surface mt-1">{currencySymbol} {totalIncome.toLocaleString()}</h4>
+          <div className="flex items-center gap-1.5 mt-2 text-success">
+            <TrendingUp size={12} />
+            <span className="text-[11px] font-medium">Total Income</span>
+          </div>
+        </div>
+
+        <div className="stat-card flex flex-col justify-center hover:border-error/30 transition-colors !p-5">
+          <div className="flex justify-between items-start mb-2">
+            <p className="stat-label mb-0">Total Expenses</p>
+            <div className="w-8 h-8 rounded-lg bg-error/10 flex items-center justify-center text-error"><ShoppingCart size={16} /></div>
+          </div>
+          <h4 className="text-xl sm:text-2xl font-bold text-on-surface mt-1">{currencySymbol} {totalExpense.toLocaleString()}</h4>
+          <div className="flex items-center gap-1.5 mt-2 text-error">
+            <TrendingDown size={12} />
+            <span className="text-[11px] font-medium">{totalIncome > 0 ? `${((aggregateExpense / totalIncome) * 100).toFixed(0)}% Budget Used` : 'Budget Limit'}</span>
+          </div>
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+        <section className="stat-card bg-primary/5 border-primary/20 relative overflow-hidden flex flex-col justify-between">
+          <div className="absolute top-0 right-0 w-32 h-32 bg-primary/10 blur-2xl rounded-full -mr-8 -mt-8" />
+          <div className="relative z-10 flex flex-col h-full">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="w-9 h-9 rounded-xl bg-primary/20 flex items-center justify-center text-primary">
+                <Bot size={18} />
+              </div>
+              <h4 className="text-sm font-semibold text-primary tracking-wide">ExpanseMate Assistant</h4>
+            </div>
+            <p className="text-sm text-on-surface-variant leading-relaxed mb-6 flex-1">
+              {totalIncome > 0
+                ? `You saved ${savingsRate}% this month. ${Number(savingsRate) > 20 ? 'Great job!' : 'Consider saving a bit more where possible.'} You could add ${currencySymbol} ${Math.round(totalIncome * 0.1).toLocaleString()} to your savings goals.`
+                : 'I will give you advice when you add your income and expenses.'
+              }
+            </p>
+            <Link to="/ai-advisor" className="btn btn-primary bg-primary/10 text-primary border border-primary/20 hover:bg-primary hover:text-white py-2.5 text-xs font-semibold w-full justify-center transition-all">
+              <Bot size={16} className="mr-2" /> View Advice
+            </Link>
+          </div>
+        </section>
+
+        <section className="stat-card">
+          <h3 className="section-title text-base font-semibold mb-1 text-on-surface">Income vs Spending</h3>
+          <p className="text-on-surface-variant text-xs mb-8">Compare what you made and what you spent</p>
+          <div className="space-y-5 mt-2">
+            {topCategories.length > 0 ? topCategories.map(([cat, amt], idx) => {
+              const pct = Math.round((amt / totalAllocated) * 100);
+              return (
+                <div key={idx} className="space-y-2 group">
+                  <div className="flex justify-between items-center cursor-default">
+                    <span className="text-sm font-medium text-on-surface-variant group-hover:text-primary transition-colors">{cat}</span>
+                    <span className="text-sm font-bold text-on-surface">{currencySymbol} {amt.toLocaleString()}</span>
+                  </div>
+                  <div className="progress-bar !h-1.5 bg-surface-lowest overflow-hidden rounded-full border border-glass-border">
+                    <div
+                      className={`progress-fill ${idx === 0 ? 'bg-primary' : idx === 1 ? 'bg-secondary' : 'bg-tertiary'}`}
+                      style={{ width: `${pct}%` }}
+                    />
+                  </div>
+                </div>
+              );
+            }) : (
+              <div className="text-center py-6 opacity-60">
+                <p className="text-sm font-medium tracking-wide text-on-surface-variant">No spending data found.</p>
+              </div>
+            )}
+          </div>
+        </section>
+
+        <section className="stat-card">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="section-title text-base font-semibold mb-0 text-on-surface">Savings Goals</h3>
+            <Link to="/savings" className="text-xs font-semibold text-primary hover:text-primary-focus transition-colors">Manage</Link>
+          </div>
+          <div className="space-y-4">
+            {goals.length > 0 ? goals.slice(0, 3).map((goal, idx) => {
+              const pct = goal.targetAmount > 0 ? Math.round((goal.currentAmount / goal.targetAmount) * 100) : 0;
+              return (
+                <div key={idx} className="space-y-2 group p-2 rounded-xl hover:bg-surface-lowest transition-colors border border-transparent hover:border-glass-border">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center text-primary shrink-0 transition-transform duration-300 group-hover:scale-105">
+                      <Target size={18} />
+                    </div>
+                    <div className="min-w-0 flex-1">
+                      <h4 className="text-sm font-semibold text-on-surface truncate">{goal.name}</h4>
+                      <p className="text-xs font-medium text-on-surface-variant mt-0.5">{currencySymbol} {(goal.currentAmount || 0).toLocaleString()} / {currencySymbol} {goal.targetAmount.toLocaleString()}</p>
+                    </div>
+                    <span className="text-sm font-bold text-primary shrink-0">{pct}%</span>
+                  </div>
+                  <div className="progress-bar !h-1.5 overflow-hidden rounded-full bg-background border border-glass-border">
+                    <div className="progress-fill bg-primary" style={{ width: `${Math.min(100, pct)}%` }} />
+                  </div>
+                </div>
+              );
+            }) : (
+              <div className="empty-state !py-6 opacity-80">
+                <Target size={24} className="mx-auto mb-3 text-on-surface-variant" />
+                <p className="text-sm font-semibold mb-1">No active goals</p>
+                <Link to="/savings" className="btn btn-outline text-xs px-5 mt-4 border-glass-border">Set Goal</Link>
+              </div>
+            )}
+          </div>
+        </section>
+      </div>
+
+      <section className="mt-8 space-y-3">
+        <div className="flex flex-col xl:flex-row items-start xl:items-center justify-between gap-4 mb-4 bg-surface-lowest/50 p-3 px-4 rounded-xl border border-glass-border">
+          <div className="flex items-center gap-2">
+            <h3 className="section-title mb-0 text-base font-semibold text-on-surface whitespace-nowrap">Recent Activity</h3>
+            <span className="text-[10px] bg-primary/10 text-primary px-2 py-0.5 rounded-full font-bold">{filteredActivity.length} Entries</span>
+          </div>
+
+          <div className="flex flex-col sm:flex-row flex-1 xl:flex-none justify-end gap-3 w-full xl:w-auto">
+            <div className="relative flex-1 sm:w-64 max-w-sm">
+              <Search size={14} className="absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant" />
+              <input
+                type="text"
+                placeholder="Search transactions..."
+                value={logSearchQuery}
+                onChange={(e) => setLogSearchQuery(e.target.value)}
+                className="w-full bg-surface-container border border-glass-border rounded-lg py-1.5 pl-9 pr-4 text-[12px] text-on-surface focus:outline-none focus:border-primary/50 transition-colors placeholder:text-on-surface-variant/50"
+              />
+            </div>
+
+            <select
+              value={activityFilter}
+              onChange={(e) => setActivityFilter(e.target.value)}
+              className="bg-surface-container border border-glass-border rounded-lg py-1.5 px-3 text-[12px] text-on-surface focus:outline-none focus:border-primary/50 transition-colors w-full sm:w-auto"
+            >
+              <option value="All">All</option>
+              <option value="Income">Income</option>
+              <option value="Expense">Expense</option>
+              <option value="Tax">Tax</option>
+              <option value="Investment">Investment</option>
+            </select>
+          </div>
+        </div>
+
+        <div className="flex flex-col gap-2 max-h-[460px] overflow-y-auto pr-2 custom-scrollbar">
+          {filteredActivity.length > 0 ? filteredActivity.slice(0, 10).map((item, idx) => {
+            const handleRowClick = () => {
+              if (item.displayType === 'Shared') return navigate('/shared-wallets');
+              if (item.displayType === 'Subscription') return navigate('/subscriptions');
+              if (item.displayType === 'Tax') return navigate('/tax-monitor');
+              if (item.type === 'portfolio') return navigate('/portfolio');
+              navigate('/transactions');
+            };
+
+            return (
+              <div key={idx} 
+                onClick={handleRowClick}
+                className="flex items-center justify-between py-2.5 px-4 rounded-xl hover:bg-surface-lowest/70 border border-transparent hover:border-glass-border transition-all cursor-pointer group">
+              <div className="flex items-center gap-4">
+                <div className={`w-9 h-9 rounded-lg flex items-center justify-center shrink-0 ${item.type === 'income' || item.type === 'portfolio' ? 'bg-success/10 text-success' :
+                  item.displayType === 'Tax' ? 'bg-warning/10 text-warning' :
+                    item.displayType === 'Subscription' ? 'bg-primary/10 text-primary' :
+                      item.displayType === 'Shared' ? 'bg-secondary/10 text-secondary' : 'bg-error/10 text-error'
+                  }`}>
+                  {item.type === 'income' ? <TrendingUp size={16} /> :
+                    item.type === 'portfolio' ? <Activity size={16} /> :
+                      item.displayType === 'Tax' ? <FileText size={16} /> :
+                        item.displayType === 'Subscription' ? <CreditCard size={16} /> :
+                          item.displayType === 'Shared' ? <Users size={16} /> : <TrendingDown size={16} />}
+                </div>
+                <div>
+                  <p className="text-sm font-semibold text-on-surface tracking-tight group-hover:text-primary transition-colors">{item.title}</p>
+                  <p className="text-[11px] font-medium text-on-surface-variant mt-0.5">
+                    <span className="uppercase text-[9px] tracking-widest font-bold opacity-70 bg-surface-high px-1.5 py-0.5 rounded mr-1">{item.activityType || item.displayType || item.type}</span>
+                    {item.category && <span className="mr-1">{item.category} <span className="opacity-50">•</span></span>} {new Date(item.date || item.createdAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}
+                  </p>
+                </div>
+              </div>
+              <div className="text-right flex items-center gap-3">
+                <div className="flex flex-col items-end">
+                  <p className={`text-sm font-bold tracking-tight ${item.type === 'income' || item.type === 'portfolio' ? 'text-success' : 'text-error'}`}>
+                    {item.type === 'income' || item.type === 'portfolio' ? '+' : '-'}{currencySymbol} {item.amount?.toLocaleString(undefined, { maximumFractionDigits: 0 })}
+                  </p>
+                  {item.source && <p className="text-[9px] uppercase tracking-wider font-semibold text-on-surface-variant mt-0.5">{item.source}</p>}
+                </div>
+                <ArrowUpRight size={14} className="text-on-surface-variant opacity-0 group-hover:opacity-40 transition-all -translate-x-2 group-hover:translate-x-0" />
+              </div>
+            </div>
+            );
+          }) : (
+            <div className="text-center py-6 opacity-60 bg-surface-lowest/30 rounded-xl border border-glass-border border-dashed">
+              <Activity size={20} className="mx-auto mb-2 text-on-surface-variant opacity-50" />
+              <p className="text-sm font-medium mb-1">No Activity Logs</p>
+            </div>
+          )}
+        </div>
+        {filteredActivity.length > 6 && (
+          <div className="text-center pt-2">
+            <Link to="/transactions" className="btn btn-ghost text-xs font-medium px-6 py-2 text-primary hover:bg-primary/10">View All Transactions</Link>
           </div>
         )}
-
-        <nav className="space-y-1 flex-1 overflow-y-auto custom-scrollbar">
-          <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.25em] mb-4 px-4 opaciy-60">Finance</p>
-          <NavItem icon={<LayoutDashboard size={18} />} label="Dashboard" active={activeTab === "dashboard"} onClick={() => { setActiveTab("dashboard"); setSidebarOpen(false); }} />
-          <NavItem icon={<Wallet size={18} />} label="Incomes" active={activeTab === "addIncome" || activeTab === "incomeRecord"} onClick={() => { setActiveTab("addIncome"); setSidebarOpen(false); }} />
-          <NavItem icon={<CreditCard size={18} />} label="Expenses" active={activeTab === "expense" || activeTab === "allExpense"} onClick={() => { setActiveTab("expense"); setSidebarOpen(false); }} />
-          
-          <div className="h-4"></div>
-          <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.25em] mb-4 px-4 opacity-60">Mate Tools</p>
-          <NavItem icon={<Bell size={18} />} label="Reminders" active={activeTab === "reminders"} onClick={() => { setActiveTab("reminders"); setSidebarOpen(false); }} />
-          <NavItem icon={<CalcIcon size={18} />} label="Calculator" active={activeTab === "calculator"} onClick={() => { setActiveTab("calculator"); setSidebarOpen(false); }} />
-          <NavItem icon={<RefreshCcw size={18} />} label="Converter" active={activeTab === "converter"} onClick={() => { setActiveTab("converter"); setSidebarOpen(false); }} />
-          
-          <div className="h-4"></div>
-          <p className="text-[10px] font-black text-slate-400 uppercase tracking-[0.25em] mb-4 px-4 opacity-60">Account</p>
-          <NavItem icon={<SettingsIcon size={18} />} label="Settings" active={activeTab === "profile"} onClick={() => { setActiveTab("profile"); setSidebarOpen(false); }} />
-        </nav>
-
-        <button onClick={handleLogout} className="mt-8 flex items-center gap-3 px-5 py-4 text-slate-400 hover:text-rose-500 hover:bg-rose-50/50 rounded-2xl transition-all font-black text-xs uppercase tracking-widest">
-          <LogOut size={18} /> Logout
-        </button>
-      </aside>
-
-      <main className="flex-1 flex flex-col min-w-0 overflow-hidden relative">
-        <header className="lg:hidden flex justify-between items-center p-6 bg-white border-b sticky top-0 z-30">
-          <div className="flex items-center gap-3">
-             <div className="w-8 h-8 bg-indigo-600 rounded-lg flex items-center justify-center">
-                <LayoutDashboard className="text-white" size={18} />
-             </div>
-             <span className="font-black text-slate-900 tracking-tight text-sm uppercase">ExpanseMate</span>
-          </div>
-          <button onClick={() => setSidebarOpen(true)} className="p-2.5 bg-slate-50 rounded-xl text-slate-600"><Menu size={20} /></button>
-        </header>
-
-        <div className="flex-1 overflow-y-auto">
-          {activeTab === "dashboard" && <DashboardHome />}
-          {activeTab === "expense" && (
-            <div className="p-6 lg:p-10 max-w-5xl mx-auto space-y-8 animate-fade-in-up">
-              <div className="flex justify-between items-end mb-4 px-2">
-                 <div>
-                    <h2 className="text-2xl font-black text-slate-800 tracking-tight">Manage Expenses</h2>
-                    <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">Track your spending</p>
-                 </div>
-                 <button onClick={() => setActiveTab('allExpense')} className="px-5 py-2.5 bg-white border border-slate-100 rounded-xl font-bold text-xs text-indigo-600 hover:bg-slate-50 transition-all flex items-center gap-2">
-                    <History size={16} /> View History
-                 </button>
-              </div>
-              <Expense onSuccess={refreshData} />
-            </div>
-          )}
-          {activeTab === "addIncome" && (
-            <div className="p-6 lg:p-10 max-w-5xl mx-auto space-y-8 animate-fade-in-up">
-              <div className="flex justify-between items-end mb-4 px-2">
-                 <div>
-                    <h2 className="text-2xl font-black text-slate-800 tracking-tight">Source Income</h2>
-                    <p className="text-xs font-bold text-slate-400 uppercase tracking-widest">Add your earnings</p>
-                 </div>
-                 <button onClick={() => setActiveTab('incomeRecord')} className="px-5 py-2.5 bg-white border border-slate-100 rounded-xl font-bold text-xs text-indigo-600 hover:bg-slate-50 transition-all flex items-center gap-2">
-                    <TrendingUp size={16} /> Income Records
-                 </button>
-              </div>
-              <AddIncome onSuccess={refreshData} />
-            </div>
-          )}
-          {activeTab === "calculator" && <div className="p-6 lg:p-20 flex justify-center"><Calculator /></div>}
-          {activeTab === "converter" && <div className="p-6 lg:p-20 flex justify-center"><CurrencyConverter /></div>}
-          {activeTab === "reminders" && <div className="p-6 lg:p-10 max-w-6xl mx-auto"><Reminders /></div>}
-          {activeTab === "allExpense" && <div className="p-6 lg:p-10 max-w-6xl mx-auto"><ExpenseTable expenses={expenses} onEdit={(e) => setEditingExpense(e)} onDelete={deleteExpense} /></div>}
-          {activeTab === "incomeRecord" && <div className="p-6 lg:p-10 max-w-6xl mx-auto"><IncomeTable incomes={incomes} onEdit={(e) => setEditingIncome(e)} onDelete={deleteIncome} /></div>}
-          {activeTab === "profile" && <div className="p-6 lg:p-10 max-w-5xl mx-auto"><ProfileSettings user={user} stats={stats} onSuccess={checkAuth} /></div>}
-        </div>
-      </main>
-
-      {editingExpense && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-md animate-fade-in">
-           <ExpenseEditModal expense={editingExpense} onClose={() => setEditingExpense(null)} onSave={updateExpense} />
-        </div>
-      )}
-
-      {editingIncome && (
-        <div className="fixed inset-0 z-[100] flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-md animate-fade-in">
-           <IncomeEditModal income={editingIncome} onClose={() => setEditingIncome(null)} onSave={updateIncome} />
-        </div>
-      )}
+      </section>
+      
+      <style>{`
+        .custom-scrollbar::-webkit-scrollbar {
+          width: 4px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+          background: transparent;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+          background: var(--color-glass-border);
+          border-radius: 20px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+          background: var(--color-primary);
+          opacity: 0.1;
+        }
+      `}</style>
     </div>
   );
 };
 
-
-const NavItem = ({ icon, label, active, onClick }) => (
-  <button
-    onClick={onClick}
-    className={`w-full flex items-center justify-between px-5 py-3.5 rounded-[1.4rem] transition-all duration-300 group ${
-      active ? "bg-slate-900 text-white shadow-2xl shadow-slate-200 translate-x-1" : "text-slate-500 hover:bg-slate-50 hover:text-slate-800"
-    }`}
-  >
-    <div className="flex items-center gap-3.5">
-      <div className={`${active ? 'text-white' : 'text-slate-400 group-hover:text-indigo-600'} transition-colors`}>
-        {React.cloneElement(icon, { size: 18 })}
-      </div>
-      <span className="font-black text-[11px] uppercase tracking-widest">{label}</span>
-    </div>
-    {active && <div className="w-1.5 h-1.5 rounded-full bg-indigo-400 shadow-[0_0_10px_#818cf8]"></div>}
-  </button>
-);
-
-const StatCard = ({ title, amount, icon, color, trend }) => {
-  const colorMap = {
-    indigo: "bg-indigo-50/50 text-indigo-600 border-indigo-100/50",
-    emerald: "bg-emerald-50/50 text-emerald-600 border-emerald-100/50",
-    rose: "bg-rose-50/50 text-rose-600 border-rose-100/50"
-  };
-
-  return (
-    <div className="glass-panel p-7 hover:shadow-2xl hover:shadow-slate-100 transition-all duration-500 group hover:-translate-y-1 relative overflow-hidden">
-      <div className="flex justify-between items-start mb-6">
-        <div className={`p-4 rounded-[1.4rem] transition-transform group-hover:scale-110 duration-500 border ${colorMap[color]}`}>
-          {React.cloneElement(icon, { size: 22 })}
-        </div>
-        <div className="flex flex-col items-end">
-           <span className={`text-[9px] font-black px-2.5 py-1 rounded-full uppercase tracking-widest ${color.includes('emerald') || color.includes('indigo') ? 'bg-emerald-50 text-emerald-600' : 'bg-rose-50 text-rose-600'}`}>
-            {trend}
-           </span>
-        </div>
-      </div>
-      <div className="relative z-10">
-        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1 opacity-70">{title}</p>
-        <p className="text-3xl font-black text-slate-900 tracking-tighter">
-          <span className="text-sm font-bold text-slate-300 mr-1.5 uppercase">Rs</span>
-          {amount?.toLocaleString()}
-        </p>
-      </div>
-    </div>
-  );
-};
-
-const FinancialHealthScore = ({ income, expense }) => {
-  const ratio = income > 0 ? (expense / income) : 0;
-  const score = Math.max(0, Math.min(100, Math.round((1 - ratio) * 100)));
-  
-  let status = "Excellent";
-  let color = "text-emerald-500";
-  let bgColor = "bg-emerald-500";
-  let strokeColor = "#10b981";
-
-  if (score < 40) { 
-    status = "Critical"; 
-    color = "text-rose-500"; 
-    bgColor = "bg-rose-500";
-    strokeColor = "#f43f5e";
-  } else if (score < 70) { 
-    status = "Managed"; 
-    color = "text-amber-500"; 
-    bgColor = "bg-amber-500";
-    strokeColor = "#f59e0b";
-  }
-
-  return (
-    <div className="glass-panel p-8 flex flex-col items-center justify-center text-center relative overflow-hidden group">
-       <div className="absolute top-6 left-8">
-          <h4 className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Health Audit</h4>
-          <p className="text-sm font-black text-slate-800 uppercase tracking-widest">Finance Score</p>
-       </div>
-       <div className="relative w-44 h-44 flex items-center justify-center mb-4 mt-6">
-          <svg className="w-full h-full transform -rotate-90 drop-shadow-2xl">
-             <circle cx="88" cy="88" r="75" stroke="#f1f5f9" strokeWidth="14" fill="transparent" />
-             <circle cx="88" cy="88" r="75" stroke={strokeColor} strokeWidth="14" fill="transparent" strokeDasharray={471} strokeDashoffset={471 - (471 * score) / 100} className="transition-all duration-[2000ms] ease-out" strokeLinecap="round" />
-          </svg>
-          <div className="absolute inset-0 flex flex-col items-center justify-center">
-             <span className="text-5xl font-black text-slate-900 tracking-tighter">{score}</span>
-             <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Efficiency</span>
-          </div>
-       </div>
-       <div className={`px-4 py-1.5 rounded-full ${bgColor} text-white text-[10px] font-black uppercase tracking-widest shadow-xl shadow-slate-200`}>
-          {status} Level
-       </div>
-       <p className="mt-6 text-xs font-bold text-slate-400 leading-relaxed">
-          {score > 70 ? "Excellent spending control. You are building wealth rapidly." : score > 40 ? "Your finances are stable, but there's room for optimization." : "Attention required: High expense ratio detected. Review your habits."}
-       </p>
-    </div>
-  );
-};
-
-const IntelligenceBox = () => {
-  const tips = [
-    "Track every penny; small leaks sink big ships.",
-    "Pay yourself first: save 20% of your income automatically.",
-    "Avoid lifestyle inflation when your income increases.",
-    "Diversify your investments to spread risk.",
-    "Emergency funds should cover 3-6 months of expenses.",
-    "Compound interest is the eighth wonder of the world.",
-    "Budgeting isn't about restriction; it's about intentionality."
-  ];
-  const tip = tips[new Date().getDay() % tips.length];
-
-  return (
-    <div className="bg-slate-900 rounded-[3rem] p-10 text-white relative overflow-hidden flex flex-col justify-between shadow-2xl group min-h-[320px]">
-       <div className="relative z-10">
-          <div className="flex items-center gap-2 text-indigo-400 text-[10px] font-black uppercase tracking-[0.3em] mb-8">
-             <div className="w-2 h-2 bg-indigo-500 rounded-full animate-pulse"></div>
-             ExpanseMate Intelligence
-          </div>
-          <p className="text-3xl font-black leading-tight tracking-tight mb-8 drop-shadow-md">
-             "{tip}"
-          </p>
-       </div>
-       <div className="relative z-10 flex items-center justify-between mt-auto">
-          <div className="flex items-center gap-4">
-             <div className="w-10 h-10 rounded-2xl bg-indigo-600 flex items-center justify-center font-black text-xs shadow-lg shadow-indigo-500/20">EM</div>
-             <div>
-                <span className="block text-[10px] font-black text-slate-400 uppercase tracking-widest">Daily Wisdom</span>
-                <span className="block text-[10px] font-bold text-indigo-300">v2.4 Neural Core</span>
-             </div>
-          </div>
-          <div className="p-3 bg-white/5 rounded-xl border border-white/10 opacity-60">
-             <Lightbulb size={20} className="text-indigo-400" />
-          </div>
-       </div>
-       <div className="absolute -top-20 -right-20 w-80 h-80 bg-indigo-600/10 rounded-full blur-3xl group-hover:scale-110 transition-transform duration-1000"></div>
-       <Lightbulb className="absolute -bottom-10 -right-10 text-white/5 group-hover:rotate-12 transition-transform duration-700" size={180} />
-    </div>
-  );
-};
-
-export default ResponsiveDashboard;
+export default Home;

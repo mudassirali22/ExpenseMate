@@ -7,6 +7,10 @@ const IncomeSchema = new mongoose.Schema(
       required: [true, "Income title is required"],
       trim: true,
     },
+    notes: {
+      type: String,
+      default: ""
+    },
 
     amount: {
       type: Number,
@@ -28,6 +32,12 @@ const IncomeSchema = new mongoose.Schema(
       ],
     },
 
+    method: {
+      type: String,
+      required: true,
+      enum: ["Credit Card", "Bank Transfer", "Cash / Other", "Digital Wallet"],
+      default: "Cash / Other"
+    },
     date: {
       type: Date,
       default: Date.now,

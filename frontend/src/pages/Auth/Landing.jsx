@@ -1,241 +1,270 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
-import { 
-  LayoutDashboard, 
-  TrendingUp, 
-  ShieldCheck, 
-  Zap, 
-  ArrowRight, 
-  Github, 
-  CheckCircle2,
-  PieChart,
-  Calculator,
-  RefreshCcw,
-  Bell
+import PublicNavbar from '../../components/layouts/PublicNavbar';
+import { useTheme } from '../../context/ThemeContext';
+import {
+  Wallet, TrendingUp, Shield, BarChart3, PiggyBank,
+  ArrowRight, Sparkles, Lock, Zap, Users, Star, ChevronRight,
+  Coins
 } from 'lucide-react';
+import { motion } from 'framer-motion';
 
 const Landing = () => {
+  const { theme } = useTheme();
+  const [stats, setStats] = useState({
+    activeUsers: '1K+',
+    trackedAssets: '$1.5M',
+    uptime: '99.9%',
+    rating: '4.9★'
+  });
+
+  const API = import.meta.env.VITE_BACKEND_URL;
+
+  useEffect(() => {
+    const fetchStats = async () => {
+      try {
+        const res = await fetch(`${API}/api/v1/auth/public-stats`);
+        if (res.ok) {
+          const data = await res.json();
+          setStats({
+            activeUsers: `${data.activeUsers > 100 ? Math.floor(data.activeUsers / 100) * 100 : data.activeUsers}+`,
+            trackedAssets: `$${(data.trackedAssets / 1000000).toFixed(1)}M`,
+            uptime: data.uptime,
+            rating: `${data.rating}★`
+          });
+        }
+      } catch (err) {
+        console.error("Failed to fetch public stats:", err);
+      }
+    };
+    fetchStats();
+  }, [API]);
+
   return (
-    <div className="min-h-screen bg-white text-slate-900 font-sans selection:bg-indigo-100 selection:text-indigo-900">
-      {/* Navigation */}
-      <nav className="fixed top-0 w-full z-50 bg-white/80 backdrop-blur-md border-b border-slate-100">
-        <div className="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 bg-indigo-600 rounded-xl flex items-center justify-center shadow-lg shadow-indigo-200">
-              <LayoutDashboard className="text-white" size={24} />
-            </div>
-            <span className="text-2xl font-black text-slate-800 tracking-tight">ExpanseMate</span>
-          </div>
-          
-          <div className="hidden md:flex items-center gap-8">
-            <a href="#features" className="text-sm font-semibold text-slate-600 hover:text-indigo-600 transition-colors">Features</a>
-            <a href="#security" className="text-sm font-semibold text-slate-600 hover:text-indigo-600 transition-colors">Security</a>
-            <Link to="/login" className="text-sm font-bold text-slate-800 hover:text-indigo-600 transition-colors">Sign In</Link>
-            <Link to="/signup" className="px-5 py-2.5 bg-slate-900 text-white rounded-xl text-sm font-bold hover:bg-slate-800 transition-all shadow-lg shadow-slate-200 active:scale-95">
-              Get Started
-            </Link>
-          </div>
-        </div>
-      </nav>
+    <div className="min-h-screen bg-background text-on-surface transition-colors duration-300 overflow-x-hidden relative">
+      {/* Blurry Orbs background */}
+      <div className="fixed inset-0 pointer-events-none overflow-hidden z-0">
+        <div className="absolute top-[5%] left-[5%] w-[600px] h-[600px] bg-primary/20 rounded-full blur-[140px] animate-pulse-glow" />
+        <div className="absolute bottom-[10%] right-[5%] w-[500px] h-[500px] bg-secondary/15 rounded-full blur-[120px]" />
+        <div className="absolute top-[40%] right-[20%] w-[400px] h-[400px] bg-tertiary/15 rounded-full blur-[140px]" />
+      </div>
 
-      {/* Hero Section */}
-      <section className="pt-40 pb-24 px-6">
-        <div className="max-w-7xl mx-auto grid lg:grid-cols-2 gap-16 items-center">
-          <div className="animate-fade-in-up">
-            <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-indigo-50 border border-indigo-100 mb-6">
-              <span className="flex h-2 w-2 rounded-full bg-indigo-600"></span>
-              <span className="text-xs font-bold text-indigo-700 uppercase tracking-wider">New: Financial Utilities 2.0</span>
-            </div>
-            <h1 className="text-6xl md:text-7xl font-black text-slate-900 leading-[1.1] tracking-tight mb-8">
-              Master Your Money with <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-600 to-purple-600">ExpanseMate</span>
+      <PublicNavbar />
+
+      <main>
+        {/* Hero Section */}
+        <section className="relative z-10 px-6 sm:px-10 lg:px-20 pt-20 sm:pt-24 pb-20">
+          <motion.div 
+            initial={{ opacity: 0, y: 30 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8, ease: "easeOut" }}
+            className="max-w-6xl mx-auto text-center pt-20"
+          >
+
+            <h1 className="text-5xl sm:text-6xl lg:text-7xl font-black tracking-tighter text-on-surface leading-[0.9] mb-8">
+              Track money, <br />
+              <span className="bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
+                the smart way.
+              </span>
             </h1>
-            <p className="text-xl text-slate-600 leading-relaxed mb-10 max-w-xl font-medium">
-              A premium, all-in-one financial dashboard designed for modern professionals. Track expenses, set goals, and gain insights with beautiful, dynamic visuals.
+
+            <p className="text-sm sm:text-lg text-on-surface-variant max-w-2xl mx-auto leading-relaxed mb-12">
+              Easily manage your spending, reach your goals, and master your financial future with ExpanseMate.
             </p>
-            <div className="flex flex-col sm:flex-row items-center gap-4">
-              <Link to="/signup" className="w-full sm:w-auto px-8 py-4 bg-indigo-600 text-white rounded-2xl text-lg font-bold hover:bg-indigo-700 transition-all shadow-xl shadow-indigo-100 flex items-center justify-center gap-2 group active:scale-95">
-                Start Tracking Free
-                <ArrowRight size={20} className="group-hover:translate-x-1 transition-transform" />
-              </Link>
-              <Link to="/login" className="w-full sm:w-auto px-8 py-4 bg-white border-2 border-slate-100 text-slate-800 rounded-2xl text-lg font-bold hover:bg-slate-50 transition-all flex items-center justify-center gap-2 active:scale-95">
-                Watch Demo
-              </Link>
-            </div>
-            
-            <div className="mt-12 flex items-center gap-6 grayscale opacity-60">
-              <div className="flex items-center gap-2 font-bold text-slate-400">
-                <CheckCircle2 size={24} />
-                <span>No Credit Card</span>
-              </div>
-              <div className="flex items-center gap-2 font-bold text-slate-400">
-                <ShieldCheck size={24} />
-                <span>Bank-level Security</span>
-              </div>
-            </div>
-          </div>
 
-          <div className="relative animate-fade-in-right">
-            <div className="relative z-10 bg-white rounded-[2.5rem] p-4 shadow-2xl border border-slate-100 overflow-hidden">
-               {/* Dashboard Preview Mockup */}
-               <div className="bg-slate-50 rounded-[1.8rem] border border-slate-200 overflow-hidden aspect-[4/3] flex items-center justify-center">
-                  <div className="text-center">
-                    <PieChart size={64} className="text-indigo-400 mx-auto mb-4" />
-                    <p className="font-bold text-slate-400">Dashboard Preview</p>
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-5">
+              <Link to="/signup" className="w-full sm:w-auto px-12 py-4.5 btn btn-premium text-lg">
+                Start for Free <ArrowRight size={20} />
+              </Link>
+              <Link to="/login" className="w-full sm:w-auto px-12 py-4.5 btn btn-secondary text-lg">
+                Login <ChevronRight size={20} />
+              </Link>
+            </div>
+          </motion.div>
+
+          {/* Dashboard Preview */}
+          <motion.div 
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ duration: 1, delay: 0.4, ease: "easeOut" }}
+            className="max-w-5xl mx-auto mt-20"
+          >
+            <div className="glass-card rounded-[2.5rem] p-4 sm:p-10 shadow-2xl relative overflow-hidden border-glass-border">
+              <div className="absolute inset-0 bg-gradient-to-br from-primary/5 via-surface-container/30 to-secondary/5 pointer-events-none" />
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6 relative z-10">
+                <div className="stat-card !border-none !bg-surface-lowest/50 p-8">
+                  <div className="flex items-center gap-3 mb-6">
+                    <div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center text-primary shadow-inner">
+                      <Wallet size={22} />
+                    </div>
+                    <span className="text-[10px] font-black text-on-surface-variant uppercase tracking-[0.2em]">Live Assets</span>
                   </div>
-               </div>
-            </div>
-            {/* Decorative Elements */}
-            <div className="absolute -top-10 -right-10 w-64 h-64 bg-indigo-400 rounded-full mix-blend-multiply filter blur-3xl opacity-10 animate-blob"></div>
-            <div className="absolute -bottom-10 -left-10 w-64 h-64 bg-purple-400 rounded-full mix-blend-multiply filter blur-3xl opacity-10 animate-blob animation-delay-2000"></div>
-          </div>
-        </div>
-      </section>
-
-      {/* Stats/Social Proof */}
-      <section className="py-20 border-y border-slate-100 bg-slate-50/50">
-        <div className="max-w-7xl mx-auto px-6 grid grid-cols-2 md:grid-cols-4 gap-12 text-center">
-          <div>
-            <h4 className="text-4xl font-black text-slate-900 mb-2">10k+</h4>
-            <p className="text-sm font-bold text-slate-500 uppercase tracking-widest">Active Users</p>
-          </div>
-          <div>
-            <h4 className="text-4xl font-black text-indigo-600 mb-2">$5M+</h4>
-            <p className="text-sm font-bold text-slate-500 uppercase tracking-widest">Expenses Tracked</p>
-          </div>
-          <div>
-            <h4 className="text-4xl font-black text-slate-900 mb-2">99.9%</h4>
-            <p className="text-sm font-bold text-slate-500 uppercase tracking-widest">Uptime</p>
-          </div>
-          <div>
-            <h4 className="text-4xl font-black text-indigo-600 mb-2">4.9/5</h4>
-            <p className="text-sm font-bold text-slate-500 uppercase tracking-widest">User Rating</p>
-          </div>
-        </div>
-      </section>
-
-      {/* How it Works */}
-      <section className="py-24 px-6 bg-slate-900 text-white rounded-[4rem] mx-6">
-        <div className="max-w-7xl mx-auto">
-          <div className="text-center mb-20">
-            <p className="text-indigo-400 font-black uppercase tracking-[0.3em] text-xs mb-4">The Workflow</p>
-            <h2 className="text-4xl md:text-5xl font-black tracking-tight">Financial Mastery in 3 Steps</h2>
-          </div>
-          
-          <div className="grid md:grid-cols-3 gap-12">
-            <div className="relative">
-              <div className="text-8xl font-black text-white/5 absolute -top-10 -left-6">01</div>
-              <h4 className="text-2xl font-black mb-4 relative z-10">Capture Data</h4>
-              <p className="text-slate-400 font-medium leading-relaxed">Instantly log expenses via manual entry or smart Excel imports. ExpanseMate categorizes everything automatically.</p>
-            </div>
-            <div className="relative">
-              <div className="text-8xl font-black text-white/5 absolute -top-10 -left-6">02</div>
-              <h4 className="text-2xl font-black mb-4 relative z-10">Monitor Health</h4>
-              <p className="text-slate-400 font-medium leading-relaxed">Watch your Financial Health Score react in real-time. Our intelligence engine spots leaks before they sink you.</p>
-            </div>
-            <div className="relative">
-              <div className="text-8xl font-black text-white/5 absolute -top-10 -left-6">03</div>
-              <h4 className="text-2xl font-black mb-4 relative z-10">Optimize Future</h4>
-              <p className="text-slate-400 font-medium leading-relaxed">Use built-in forecasting and wealth-building tips to transform your spending into long-term investment power.</p>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Features Grid */}
-      <section id="features" className="py-32 px-6">
-        <div className="max-w-7xl mx-auto">
-          <div className="text-center max-w-3xl mx-auto mb-24">
-            <h2 className="text-4xl md:text-5xl font-black text-slate-900 mb-6 tracking-tighter">Engineered for Results</h2>
-            <p className="text-lg text-slate-600 font-medium">Stop guessing where your money goes. ExpanseMate provides the clarity needed for total financial dominance.</p>
-          </div>
-
-          <div className="grid md:grid-cols-3 gap-8">
-            {/* Feature 1 */}
-            <div className="p-10 rounded-[3rem] bg-white border border-slate-100 hover:shadow-[0_20px_50px_rgba(79,70,229,0.1)] hover:-translate-y-2 transition-all duration-500 group">
-              <div className="w-16 h-16 bg-indigo-50 text-indigo-600 rounded-2xl flex items-center justify-center mb-8 group-hover:bg-indigo-600 group-hover:text-white transition-all duration-500">
-                <TrendingUp size={32} />
-              </div>
-              <h3 className="text-2xl font-black text-slate-800 mb-4 tracking-tight">Active Analytics</h3>
-              <p className="text-slate-500 font-medium leading-relaxed">Dynamic Recharts visualization showing daily, weekly, and monthly trends with unprecedented precision.</p>
-            </div>
-
-            {/* Feature 2 */}
-            <div className="p-10 rounded-[3rem] bg-white border border-slate-100 hover:shadow-[0_20px_50px_rgba(16,185,129,0.1)] hover:-translate-y-2 transition-all duration-500 group">
-              <div className="w-16 h-16 bg-emerald-50 text-emerald-600 rounded-2xl flex items-center justify-center mb-8 group-hover:bg-emerald-600 group-hover:text-white transition-all duration-500">
-                <Calculator size={32} />
-              </div>
-              <h3 className="text-2xl font-black text-slate-800 mb-4 tracking-tight">Integrated Tools</h3>
-              <p className="text-slate-500 font-medium leading-relaxed">Professional-grade financial calculator and real-time global currency converter built directly into the UI.</p>
-            </div>
-
-            {/* Feature 3 */}
-            <div className="p-10 rounded-[3rem] bg-white border border-slate-100 hover:shadow-[0_20px_50px_rgba(147,51,234,0.1)] hover:-translate-y-2 transition-all duration-500 group">
-              <div className="w-16 h-16 bg-purple-50 text-purple-600 rounded-2xl flex items-center justify-center mb-8 group-hover:bg-purple-600 group-hover:text-white transition-all duration-500">
-                <ShieldCheck size={32} />
-              </div>
-              <h3 className="text-2xl font-black text-slate-800 mb-4 tracking-tight">Encrypted Storage</h3>
-              <p className="text-slate-500 font-medium leading-relaxed">Your data is secured with AES-256 protocols and multi-factor authentication for absolute peace of mind.</p>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Security Section */}
-      <section id="security" className="py-32 bg-slate-900 text-white rounded-[4rem] mx-6 mb-24 overflow-hidden relative">
-        <div className="absolute top-0 right-0 w-96 h-96 bg-indigo-600 rounded-full mix-blend-screen filter blur-[120px] opacity-20"></div>
-        <div className="max-w-7xl mx-auto px-10 relative z-10 grid lg:grid-cols-2 gap-20 items-center">
-          <div>
-            <h2 className="text-4xl md:text-5xl font-black mb-8 leading-tight">Your Data Security is Our Top Priority</h2>
-            <div className="space-y-6">
-              <div className="flex gap-4 p-6 rounded-3xl bg-white/5 border border-white/10">
-                <ShieldCheck size={32} className="text-indigo-400 shrink-0" />
-                <div>
-                  <h4 className="text-xl font-bold mb-1">AES-256 Encryption</h4>
-                  <p className="text-slate-400">All your financial data is encrypted at rest and in transit using industry-standard protocols.</p>
+                  <p className="text-3xl font-black tracking-tighter text-on-surface">{stats.trackedAssets}</p>
+                </div>
+                <div className="stat-card !border-none !bg-surface-lowest/50 p-8">
+                  <div className="flex items-center gap-3 mb-6">
+                    <div className="w-12 h-12 rounded-2xl bg-emerald-500/10 flex items-center justify-center text-emerald-500 shadow-inner">
+                      <TrendingUp size={22} />
+                    </div>
+                    <span className="text-[10px] font-black text-on-surface-variant uppercase tracking-[0.2em]">Efficiency</span>
+                  </div>
+                  <p className="text-3xl font-black tracking-tighter text-on-surface">94.2%</p>
+                </div>
+                <div className="stat-card !border-none !bg-surface-lowest/50 p-8">
+                  <div className="flex items-center gap-3 mb-6">
+                    <div className="w-12 h-12 rounded-2xl bg-tertiary/10 flex items-center justify-center text-tertiary shadow-inner">
+                      <Coins size={22} />
+                    </div>
+                    <span className="text-[10px] font-black text-on-surface-variant uppercase tracking-[0.2em]">User Base</span>
+                  </div>
+                  <p className="text-3xl font-black tracking-tighter text-on-surface">{stats.activeUsers}</p>
                 </div>
               </div>
-              <div className="flex gap-4 p-6 rounded-3xl bg-white/5 border border-white/10">
-                <Zap size={32} className="text-purple-400 shrink-0" />
-                <div>
-                  <h4 className="text-xl font-bold mb-1">Two-Factor (OTP) Auth</h4>
-                  <p className="text-slate-400">Secure your account changes with mandatory OTP verification sent directly to your email.</p>
-                </div>
+              {/* Bars visual */}
+              <div className="mt-10 flex items-end gap-1.5 h-32 px-4 opacity-70">
+                {[40, 65, 85, 50, 75, 95, 80, 100, 90, 85, 70, 90, 60, 80].map((h, i) => (
+                  <div key={i} className="flex-1 bg-gradient-to-t from-primary/60 to-primary/10 rounded-t-xl" style={{ height: `${h}%` }} />
+                ))}
               </div>
             </div>
-          </div>
-          <div className="flex justify-center lg:justify-end">
-             <div className="bg-white/10 p-1 rounded-3xl backdrop-blur-sm border border-white/20 inline-block rotate-3 animate-fade-in">
-                <div className="bg-slate-800 p-8 rounded-[1.4rem]">
-                   <ShieldCheck size={120} className="text-indigo-500 drop-shadow-[0_0_20px_rgba(99,102,241,0.5)]" />
-                </div>
-             </div>
-          </div>
-        </div>
-      </section>
+          </motion.div>
+        </section>
 
-      {/* CTA Section */}
-      <section className="py-40 text-center px-6">
-        <div className="max-w-3xl mx-auto">
-          <h2 className="text-5xl md:text-6xl font-black text-slate-900 mb-8">Ready to take control of your future?</h2>
-          <p className="text-xl text-slate-600 font-medium mb-12">Join thousands of users who have optimized their spending and saved millions with ExpanseMate.</p>
-          <Link to="/signup" className="inline-flex items-center gap-2 px-10 py-5 bg-indigo-600 text-white rounded-2xl text-xl font-black hover:bg-indigo-700 transition-all shadow-2xl shadow-indigo-100 hover:scale-105 active:scale-95">
-            Get Started for Free
-            <ArrowRight size={24} />
-          </Link>
-        </div>
-      </section>
+        {/* Features Section */}
+        <section id="features" className="relative z-10 px-6 sm:px-10 lg:px-18 py-20">
+          <div className="max-w-6xl mx-auto">
+            <div className="text-center mb-20">
+              <p className="text-primary font-black text-[10px] uppercase tracking-[0.3em] mb-4">The Command Center</p>
+              <h2 className="text-4xl sm:text-5xl lg:text-6xl font-black tracking-tighter text-on-surface leading-tight">
+                One app. Absolute <span className="text-primary">Mastery</span>.
+              </h2>
+            </div>
+            <motion.div 
+              initial="hidden"
+              whileInView="visible"
+              viewport={{ once: true, margin: "-100px" }}
+              variants={{ visible: { transition: { staggerChildren: 0.1 } } }}
+              className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8"
+            >
+              {[
+                { icon: BarChart3, color: 'primary', title: 'Smart Insights', desc: 'Auto-categorized charts that tell the real story of your money.' },
+                { icon: Users, color: 'secondary', title: 'Shared Wallets', desc: 'Collaborate with partners or friends on shared household goals.' },
+                { icon: Sparkles, color: 'tertiary', title: 'AI Advisor', desc: 'Get intelligent advice tailored to your unique spending habits.' },
+                { icon: PiggyBank, color: 'primary', title: 'Tax Monitor', desc: 'Track tax deductions and preparation status in real-time.' },
+                { icon: Zap, color: 'secondary', title: 'Lightning Sync', desc: 'Cloud synchronization across all your mobile and desktop devices.' },
+                { icon: Shield, color: 'tertiary', title: 'Bank-Grade Security', desc: 'Your data is encrypted and protected with modern protocols.' },
+              ].map((feature, i) => (
+                <motion.div 
+                  key={i} 
+                  variants={{ hidden: { opacity: 0, y: 20 }, visible: { opacity: 1, y: 0 } }}
+                  className="stat-card p-10 group cursor-default"
+                >
+                  <div className={`w-16 h-16 rounded-3xl bg-${feature.color}/10 flex items-center justify-center mb-8 group-hover:scale-110 transition-all duration-500`}>
+                    <feature.icon size={28} className={`text-${feature.color}`} />
+                  </div>
+                  <h3 className="text-2xl font-bold text-on-surface mb-4 tracking-tight">{feature.title}</h3>
+                  <p className="text-on-surface-variant font-medium leading-relaxed leading-7">{feature.desc}</p>
+                </motion.div>
+              ))}
+            </motion.div>
+          </div>
+        </section>
+
+        {/* Stats Section */}
+        <section id="stats" className="relative z-10 px-6 sm:px-10 lg:px-20 py-12">
+          <div className="max-w-5xl mx-auto">
+            <motion.div 
+              initial={{ opacity: 0, y: 30 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              className="glass-card rounded-3xl p-8 sm:p-12 bg-surface-container/50 border-glass-border"
+            >
+              <div className="grid grid-cols-2 lg:grid-cols-4 gap-12 text-center">
+                {[
+                  { value: stats.activeUsers, label: 'Early Adopters' },
+                  { value: stats.trackedAssets, label: 'Tracked Assets' },
+                  { value: stats.uptime, label: 'Reliability' },
+                  { value: stats.rating, label: 'Trust Score' },
+                ].map((stat, i) => (
+                  <div key={i}>
+                    <p className="text-4xl sm:text-5xl font-black text-primary tracking-tighter mb-3">{stat.value}</p>
+                    <p className="text-[10px] font-black text-on-surface-variant uppercase tracking-[0.2em]">{stat.label}</p>
+                  </div>
+                ))}
+              </div>
+            </motion.div>
+          </div>
+        </section>
+
+        {/* Testimonials */}
+        <section id="testimonials" className="relative z-10 px-6 sm:px-10 lg:px-20 py-20">
+          <div className="max-w-6xl mx-auto">
+            <div className="mb-16">
+              <p className="text-primary font-black text-[10px] uppercase tracking-[0.3em] mb-4">Social Proof</p>
+              <h2 className="text-4xl sm:text-5xl font-black tracking-tighter text-on-surface leading-tight">
+                Trusted by <span className="text-secondary">Forward Thinkers</span>.
+              </h2>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+              {[
+                { name: 'Ahmed K.', role: 'Entrepreneur', text: 'ExpanseMate is my financial hub. The AI advisor saved me thousands in deductions.' },
+                { name: 'Sara M.', role: 'Freelancer', text: 'Stunning design and robust functionality. It has improved my income management.' },
+                { name: 'Ali R.', role: 'Engineer', text: 'The shared wallet feature is a game-changer for our household transparency.' },
+              ].map((t, i) => (
+                <div key={i} className="stat-card p-10 flex flex-col justify-between hover:border-primary/30 transition-all duration-500">
+                  <p className="text-base font-medium text-on-surface leading-relaxed italic mb-8">"{t.text}"</p>
+                  <div className="flex items-center gap-4">
+                    <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center text-primary font-black">{t.name.charAt(0)}</div>
+                    <div>
+                      <p className="text-sm font-black text-on-surface uppercase tracking-wider">{t.name}</p>
+                      <p className="text-[10px] font-bold text-on-surface-variant uppercase tracking-widest">{t.role}</p>
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        {/* CTA Section */}
+        <section className="relative z-10 px-6 sm:px-10 lg:px-20 py-20">
+          <div className="max-w-4xl mx-auto text-center">
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.95 }}
+              whileInView={{ opacity: 1, scale: 1 }}
+              viewport={{ once: true }}
+              className="glass-card rounded-3xl p-10 sm:p-20 relative overflow-hidden border-glass-border"
+            >
+              <h2 className="text-5xl sm:text-6xl font-black tracking-tighter text-on-surface mb-8 leading-tight">
+                Your future <span className="text-primary">unlocked</span>.
+              </h2>
+              <p className="text-on-surface-variant font-medium mb-12 max-w-lg mx-auto leading-relaxed text-lg">
+                Join the growing community taking total control of their financial destiny.
+              </p>
+              <Link to="/signup" className="btn btn-premium py-5 px-14 text-xl rounded-2xl shadow-2xl">
+                Create Account <ArrowRight size={22} />
+              </Link>
+            </motion.div>
+          </div>
+        </section>
+      </main>
 
       {/* Footer */}
-      <footer className="py-12 border-t border-slate-100">
-        <div className="max-w-7xl mx-auto px-6 flex flex-col md:row items-center justify-between gap-8">
-          <div className="flex items-center gap-3">
-            <LayoutDashboard className="text-indigo-600" size={24} />
-            <span className="text-xl font-black text-slate-800 tracking-tight">ExpanseMate</span>
-          </div>
-          <p className="text-slate-400 font-medium">© 2026 ExpanseMate Inc. All rights reserved.</p>
-          <div className="flex items-center gap-6">
-            <a href="#" className="p-2 bg-slate-50 rounded-lg text-slate-400 hover:text-indigo-600 transition-colors"><Github size={20} /></a>
-            <a href="#" className="p-2 bg-slate-50 rounded-lg text-slate-400 hover:text-indigo-600 transition-colors"><Zap size={20} /></a>
+      <footer className="relative z-10 border-t border-glass-border px-6 sm:px-10 lg:px-20 py-16">
+        <div className="max-w-6xl mx-auto flex flex-col sm:flex-row items-center justify-between gap-10">
+          <Link to="/" className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-primary flex items-center justify-center shadow-lg shadow-primary/20">
+              <Wallet size={20} className="text-white" />
+            </div>
+            <span className="text-2xl font-black tracking-tighter text-primary">ExpanseMate</span>
+          </Link>
+          <p className="text-[10px] text-on-surface-variant font-black uppercase tracking-[0.2em] text-center sm:text-right">
+            Developed by <a href="https://mudassirali.vercel.app/">Mudassir ali</a> <br />
+            © {new Date().getFullYear()} ExpanseMate Intelligence.
+          </p>
+          <div className="flex items-center gap-4 px-6 py-2 rounded-full bg-surface-lowest border border-glass-border">
+            <Shield size={14} className="text-primary" />
+            <span className="text-[9px] font-black uppercase tracking-widest text-on-surface opacity-60">Verified Core</span>
           </div>
         </div>
       </footer>

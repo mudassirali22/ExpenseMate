@@ -1,173 +1,126 @@
 import React, { useState } from 'react';
-import { Delete, X, History } from 'lucide-react';
+import { Calculator as CalculatorIcon } from 'lucide-react';
 
 const Calculator = () => {
-  const [display, setDisplay] = useState("0");
-  const [equation, setEquation] = useState("");
-  const [history, setHistory] = useState([]);
-  const [shouldReset, setShouldReset] = useState(false);
+  const [display, setDisplay] = useState('0');
+  const [expression, setExpression] = useState('');
+  const [history, setHistory] = useState([
+    { exp: '1,200 / 4', res: '300.00' },
+    { exp: '45.50 * 3', res: '136.50' }
+  ]);
+  const [resetDisplay, setResetDisplay] = useState(false);
 
-  const handleNumber = (num) => {
-    if (shouldReset || display === "0" || display === "Error") {
-      setDisplay(num);
-      setShouldReset(false);
-    } else {
-      setDisplay(display + num);
-    }
-  };
-
-  const handleOperator = (op) => {
-    setEquation(display + " " + op + " ");
-    setDisplay("0");
-    setShouldReset(false);
-  };
-
-  const calculate = () => {
+  const calculate = (expr) => {
     try {
-      const fullEquation = equation + display;
-      const result = new Function(`return ${fullEquation}`)();
-      const formattedResult = Number.isFinite(result) ? String(parseFloat(result.toFixed(8))) : "Error";
-      
-      if (formattedResult !== "Error") {
-        setHistory([{ eq: fullEquation, res: formattedResult }, ...history].slice(0, 5));
-      }
-      
-      setDisplay(formattedResult);
-      setEquation("");
-      setShouldReset(true);
+      const sanitized = expr.replace(/×/g, '*').replace(/÷/g, '/').replace(/%/g, '/100');
+      // eslint-disable-next-line no-eval
+      const result = eval(sanitized);
+      return Number.isInteger(result) ? result.toString() : result.toFixed(2);
     } catch {
-      setDisplay("Error");
-      setShouldReset(true);
+      return 'Error';
     }
   };
 
-  const clear = () => {
-    setDisplay("0");
-    setEquation("");
-    setShouldReset(false);
-  };
-
-  const backspace = () => {
-    if (display.length > 1) {
-      setDisplay(display.slice(0, -1));
+  const handleClick = (val) => {
+    if (val === 'AC') {
+      setDisplay('0');
+      setExpression('');
+    } else if (val === '=') {
+      const fullExp = expression + display;
+      const result = calculate(fullExp);
+      if (result !== 'Error' && fullExp.trim() !== display.trim()) {
+         setHistory([{ exp: fullExp, res: result }, ...history].slice(0, 5));
+      }
+      setDisplay(result);
+      setExpression('');
+      setResetDisplay(true);
+    } else if (['+', '-', '×', '÷', '%'].includes(val)) {
+      setExpression(display + ' ' + val + ' ');
+      setResetDisplay(true);
+    } else if (val === '+/-') {
+      setDisplay(display.startsWith('-') ? display.slice(1) : '-' + display);
     } else {
-      setDisplay("0");
+      if (resetDisplay) {
+        setDisplay(val);
+        setResetDisplay(false);
+      } else {
+        setDisplay(display === '0' ? val : display + val);
+      }
     }
   };
 
+  const clearHistory = () => setHistory([]);
+
   return (
-    <div className="bg-white rounded-[2.5rem] p-8 shadow-2xl border border-slate-100 w-full max-w-3xl mx-auto animate-fade-in flex flex-col gap-8 transition-all">
+    <section className="col-span-1 xl:col-span-5 stat-card flex flex-col gap-6 w-full">
+      <div className="flex items-center gap-3">
+        <div className="w-10 h-10 bg-secondary/10 rounded-xl border border-secondary/20 flex items-center justify-center text-secondary">
+          <CalculatorIcon size={20} />
+        </div>
+        <div>
+           <h4 className="text-sm font-black text-on-surface uppercase tracking-tighter">Strategic <span className="text-primary italic">Calculator</span></h4>
+           <p className="text-[9px] font-bold text-on-surface-variant uppercase tracking-widest opacity-60">Real-time Accounting</p>
+        </div>
+      </div>
       
-      {/* Main Calc Area */}
-      <div className="flex-1 space-y-8">
-        <div className="flex items-center justify-between px-2">
-           <h3 className="text-xl font-black text-slate-800 tracking-tight flex items-center gap-2">
-              <div className="p-1.5 bg-indigo-50 text-indigo-600 rounded-lg">
-                 <CalculatorIcon size={16} />
-              </div>
-              Pro Calculator
-           </h3>
-           <div className="text-[10px] font-black text-slate-400 uppercase tracking-widest bg-slate-50 px-3 py-1 rounded-full border border-slate-100">
-              Standard Mode
-           </div>
-        </div>
-
-        <div className="relative">
-          <div className="text-right px-6 py-8 bg-slate-900 rounded-[2rem] border-4 border-slate-800 shadow-2xl flex flex-col justify-end min-h-[140px]">
-            <div className="text-indigo-400 text-[10px] font-bold uppercase tracking-widest min-h-[1.5rem] opacity-60 mb-1">
-              {equation}
-            </div>
-            <div className="text-5xl font-black text-white truncate tracking-tighter">
-              {display}
-            </div>
-          </div>
-        </div>
-
-        <div className="grid grid-cols-4 gap-4">
-          <CalcButton label="C" onClick={clear} variant="danger" />
-          <CalcButton label="DEL" onClick={backspace} variant="secondary" />
-          <CalcButton label="%" onClick={() => handleOperator("/ 100")} variant="operator" />
-          <CalcButton label="÷" onClick={() => handleOperator("/")} variant="operator" />
-
-          <CalcButton label="7" onClick={() => handleNumber("7")} />
-          <CalcButton label="8" onClick={() => handleNumber("8")} />
-          <CalcButton label="9" onClick={() => handleNumber("9")} />
-          <CalcButton label="×" onClick={() => handleOperator("*")} variant="operator" />
-
-          <CalcButton label="4" onClick={() => handleNumber("4")} />
-          <CalcButton label="5" onClick={() => handleNumber("5")} />
-          <CalcButton label="6" onClick={() => handleNumber("6")} />
-          <CalcButton label="-" onClick={() => handleOperator("-")} variant="operator" />
-
-          <CalcButton label="1" onClick={() => handleNumber("1")} />
-          <CalcButton label="2" onClick={() => handleNumber("2")} />
-          <CalcButton label="3" onClick={() => handleNumber("3")} />
-          <CalcButton label="+" onClick={() => handleOperator("+")} variant="operator" />
-
-          <CalcButton label="0" onClick={() => handleNumber("0")} colSpan={1} />
-          <CalcButton label="." onClick={() => handleNumber(".")} />
-          <CalcButton label="=" onClick={calculate} variant="primary" colSpan={2} />
+      {/* Calculator Screen */}
+      <div className="bg-surface-container p-5 rounded-2xl flex flex-col items-end gap-1 shadow-inner border border-glass-border">
+        <span className="text-[9px] text-on-surface-variant font-black uppercase tracking-widest min-h-[16px] truncate max-w-full opacity-40 italic">{expression || '\u00A0'}</span>
+        <div className="text-3xl font-black font-mono tracking-tighter text-on-surface overflow-hidden truncate max-w-full">
+           {display !== 'Error' && !isNaN(display) && display !== '' ? Number(display).toLocaleString(undefined, { maximumFractionDigits: 6 }) : display}
         </div>
       </div>
-
-      {/* History Area - Compact */}
-      <div className="bg-slate-50 rounded-[2rem] p-6 border border-slate-100">
-         <h4 className="text-[9px] font-black uppercase tracking-[0.2em] text-slate-400 mb-4 flex items-center gap-2">
-            <History size={12} /> Recent History
-         </h4>
-         <div className="space-y-6 flex-1">
-            {history.length === 0 ? (
-              <div className="h-full flex flex-col items-center justify-center text-center opacity-30 py-20">
-                 <History size={32} className="mb-4" />
-                 <p className="text-xs font-bold uppercase tracking-widest">No history</p>
-              </div>
-            ) : (
-              history.map((h, i) => (
-                <div key={i} className="animate-fade-in group cursor-pointer" onClick={() => { setDisplay(h.res); setEquation(""); }}>
-                   <p className="text-[10px] text-slate-400 font-bold mb-1 group-hover:text-indigo-500 transition-colors">{h.eq} =</p>
-                   <p className="text-xl font-black text-slate-700">{h.res}</p>
-                </div>
-              ))
-            )}
-         </div>
-         <div className="mt-8 pt-6 border-t border-slate-200">
-            <p className="text-[10px] font-bold text-slate-400 leading-relaxed uppercase tracking-tighter">
-               Click any entry to restore result to display.
-            </p>
-         </div>
+      
+      {/* Calculator Buttons Grid */}
+      <div className="grid grid-cols-4 gap-2.5">
+        {/* Row 1 */}
+        <button onClick={() => handleClick('AC')} className="aspect-square bg-surface-lowest rounded-xl font-black text-error hover:bg-error/10 transition-all active:scale-95 text-[10px] uppercase tracking-widest border border-glass-border shadow-sm">AC</button>
+        <button onClick={() => handleClick('+/-')} className="aspect-square bg-surface-lowest rounded-xl font-black text-primary hover:bg-primary/10 transition-all active:scale-95 text-xs border border-glass-border shadow-sm">+/-</button>
+        <button onClick={() => handleClick('%')} className="aspect-square bg-surface-lowest rounded-xl font-black text-primary hover:bg-primary/10 transition-all active:scale-95 text-xs border border-glass-border shadow-sm">%</button>
+        <button onClick={() => handleClick('÷')} className="aspect-square bg-primary/10 rounded-xl font-black text-primary hover:bg-primary/20 transition-all active:scale-95 text-lg border border-primary/20 shadow-sm transition-colors">÷</button>
+        
+        {/* Row 2 */}
+        <button onClick={() => handleClick('7')} className="aspect-square bg-surface-lowest rounded-xl font-bold text-on-surface hover:bg-surface-container transition-all active:scale-95 border border-glass-border shadow-sm">7</button>
+        <button onClick={() => handleClick('8')} className="aspect-square bg-surface-lowest rounded-xl font-bold text-on-surface hover:bg-surface-container transition-all active:scale-95 border border-glass-border shadow-sm">8</button>
+        <button onClick={() => handleClick('9')} className="aspect-square bg-surface-lowest rounded-xl font-bold text-on-surface hover:bg-surface-container transition-all active:scale-95 border border-glass-border shadow-sm">9</button>
+        <button onClick={() => handleClick('×')} className="aspect-square bg-primary/10 rounded-xl font-black text-primary hover:bg-primary/20 transition-all active:scale-95 text-lg border border-primary/20 shadow-sm transition-colors">×</button>
+        
+        {/* Row 3 */}
+        <button onClick={() => handleClick('4')} className="aspect-square bg-surface-lowest rounded-xl font-bold text-on-surface hover:bg-surface-container transition-all active:scale-95 border border-glass-border shadow-sm">4</button>
+        <button onClick={() => handleClick('5')} className="aspect-square bg-surface-lowest rounded-xl font-bold text-on-surface hover:bg-surface-container transition-all active:scale-95 border border-glass-border shadow-sm">5</button>
+        <button onClick={() => handleClick('6')} className="aspect-square bg-surface-lowest rounded-xl font-bold text-on-surface hover:bg-surface-container transition-all active:scale-95 border border-glass-border shadow-sm">6</button>
+        <button onClick={() => handleClick('-')} className="aspect-square bg-primary/10 rounded-xl font-black text-primary hover:bg-primary/20 transition-all active:scale-95 text-lg border border-primary/20 shadow-sm transition-colors">-</button>
+        
+        {/* Row 4 */}
+        <button onClick={() => handleClick('1')} className="aspect-square bg-surface-lowest rounded-xl font-bold text-on-surface hover:bg-surface-container transition-all active:scale-95 border border-glass-border shadow-sm">1</button>
+        <button onClick={() => handleClick('2')} className="aspect-square bg-surface-lowest rounded-xl font-bold text-on-surface hover:bg-surface-container transition-all active:scale-95 border border-glass-border shadow-sm">2</button>
+        <button onClick={() => handleClick('3')} className="aspect-square bg-surface-lowest rounded-xl font-bold text-on-surface hover:bg-surface-container transition-all active:scale-95 border border-glass-border shadow-sm">3</button>
+        <button onClick={() => handleClick('+')} className="aspect-square bg-primary/10 rounded-xl font-black text-primary hover:bg-primary/20 transition-all active:scale-95 text-lg border border-primary/20 shadow-sm transition-colors">+</button>
+        
+        {/* Row 5 */}
+        <button onClick={() => handleClick('0')} className="col-span-2 aspect-[2.1/1] bg-surface-lowest rounded-xl font-bold text-on-surface hover:bg-surface-container transition-all active:scale-95 text-left pl-7 border border-glass-border shadow-sm">0</button>
+        <button onClick={() => handleClick('.')} className="aspect-square bg-surface-lowest rounded-xl font-bold text-on-surface hover:bg-surface-container transition-all active:scale-95 border border-glass-border shadow-sm">.</button>
+        <button onClick={() => handleClick('=')} className="aspect-square bg-primary rounded-xl font-black text-on-primary shadow-lg shadow-primary/20 hover:shadow-primary/40 hover:scale-105 active:scale-95 transition-all text-xl">=</button>
       </div>
-    </div>
-  );
-};
-
-const CalculatorIcon = ({ size }) => (
-  <svg width={size} height={size} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
-    <rect width="16" height="20" x="4" y="2" rx="2" ry="2" /><line x1="8" x2="16" y1="6" y2="6" /><line x1="16" x2="16" y1="14" y2="18" /><path d="M16 10h.01" /><path d="M12 10h.01" /><path d="M8 10h.01" /><path d="M12 14h.01" /><path d="M8 14h.01" /><path d="M12 18h.01" /><path d="M8 18h.01" />
-  </svg>
-);
-
-const CalcButton = ({ label, onClick, variant = "default", colSpan = 1, rowSpan = 1 }) => {
-  const baseStyles = "h-16 rounded-[1.25rem] font-black transition-all active:scale-95 flex items-center justify-center text-xl shadow-sm border-2";
-  const variants = {
-    default: "bg-white text-slate-600 hover:bg-slate-50 border-slate-100 hover:border-slate-200",
-    primary: "bg-indigo-600 text-white hover:bg-indigo-700 shadow-xl shadow-indigo-100 border-indigo-500",
-    secondary: "bg-slate-100 text-slate-600 hover:bg-slate-200 border-slate-200",
-    operator: "bg-indigo-50 text-indigo-700 hover:bg-indigo-100 border-indigo-100",
-    danger: "bg-rose-50 text-rose-600 hover:bg-rose-100 border-rose-100"
-  };
-
-  return (
-    <button 
-      onClick={onClick}
-      className={`${baseStyles} ${variants[variant]}`}
-      style={{ 
-        gridColumn: `span ${colSpan}`,
-        gridRow: `span ${rowSpan}`,
-        height: rowSpan > 1 ? 'auto' : '4rem'
-      }}
-    >
-      {label}
-    </button>
+      
+      <div className="mt-2 bg-surface-container/30 p-5 rounded-2xl border border-glass-border">
+        <div className="flex items-center justify-between mb-4">
+          <h5 className="text-[9px] font-black text-on-surface-variant uppercase tracking-widest opacity-60">History Log</h5>
+          <button onClick={clearHistory} className="text-[9px] font-black text-primary uppercase tracking-widest hover:underline transition-all">Clear all</button>
+        </div>
+        <ul className="space-y-2 max-h-32 overflow-y-auto no-scrollbar mask-fade-y">
+          {history.map((item, idx) => (
+            <li key={idx} className="flex items-center justify-between p-3 rounded-xl bg-surface-lowest border border-glass-border group hover:bg-surface-container transition-colors shadow-sm">
+              <span className="text-[10px] font-mono text-on-surface-variant font-bold opacity-60">{item.exp}</span>
+              <span className="text-xs font-black text-on-surface tracking-tight">{item.res}</span>
+            </li>
+          ))}
+          {history.length === 0 && (
+            <li className="text-center py-4 text-[9px] font-black text-on-surface-variant uppercase tracking-widest opacity-30 italic">No entries detected</li>
+          )}
+        </ul>
+      </div>
+    </section>
   );
 };
 

@@ -3,7 +3,7 @@ const Income = require("../models/Income");
 // Add Income 
 const addIncome = async (req, res) => {
   try {
-    const {title, amount, source, date} = req.body;
+    const {title, amount, source, date, method, notes} = req.body;
 
     if (!title || !amount || !source) {
         return res.status(400).json({
@@ -16,6 +16,8 @@ const addIncome = async (req, res) => {
           amount,
           source,
           date: date || Date.now(),
+          method: method || "Cash / Other",
+          notes: notes || "",
           user: req.user.id,
         });
     
@@ -69,7 +71,7 @@ const getIncome = async (req, res) => {
 const updateIncome = async (req, res) => {
   try {
     const { id } = req.params;
-    const { title, amount, source, date } = req.body;
+    const { title, amount, source, date, notes } = req.body;
 
     const income = await Income.findOne({
       _id: id,
@@ -86,6 +88,7 @@ const updateIncome = async (req, res) => {
     if (amount !== undefined) income.amount = amount;
     if (source !== undefined) income.source = source;
     if (date !== undefined && date !== "") income.date = date;
+    if (notes !== undefined) income.notes = notes;
 
     await income.save();
     

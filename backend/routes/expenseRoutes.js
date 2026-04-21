@@ -1,7 +1,7 @@
 const express = require("express");
 const router = express.Router();
 const protect = require("../middleware/protect");
-const { createExpense, getExpenses, updateExpenses, deleteExpense } = require("../controllers/expenseController");
+const { createExpense, getExpenses, updateExpenses, deleteExpense, getAllTransactions } = require("../controllers/expenseController");
 
 
 // Create Expense (Protected)
@@ -9,6 +9,9 @@ router.post("/add", protect , createExpense);
 
 // Get Expenses 
 router.get("/get", protect, getExpenses)
+
+// Unified Transactions (All expenses and incomes paginated)
+router.get("/transactions", protect, getAllTransactions);
 
 // Update Expenses 
 router.put("/update/:id", protect, updateExpenses)

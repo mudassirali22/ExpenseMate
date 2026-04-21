@@ -1,4 +1,5 @@
 const Goal = require("../models/Goal");
+const { createNotification } = require("../utils/notificationHelper");
 
 // Create Goal
 exports.createGoal = async (req, res) => {
@@ -53,6 +54,16 @@ exports.updateGoal = async (req, res) => {
 
     await goal.save();
     
+    // Check for goal completion (Async)
+    if (goal.currentAmount >= goal.targetAmount) {
+      createNotification(req.user.id, {
+        type: "ACTION",
+        message: `Congratulations! You've achieved your goal: "${goal.name}"!`,
+        link: "/savings-goals",
+        category: "budget"
+      });
+    }
+
     res.status(200).json(goal);
   } catch (error) {
     console.log("Update Goal Error :", error.message);
