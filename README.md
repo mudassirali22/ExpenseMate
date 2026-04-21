@@ -1,5 +1,4 @@
 <div align="center">
-  <img src="https://via.placeholder.com/150/6366f1/ffffff?text=E" alt="ExpenseMate Logo" width="100" />
   <h1>ExpenseMate</h1>
   <p><strong>A Next-Generation, Glassmorphic Financial Management Dashboard</strong></p>
   
@@ -65,17 +64,29 @@ ExpenseMate isn't just an expense tracker—it's an entire ecosystem for your mo
 
 ## Technology Stack
 
-| Architecture | Technologies Used |
+### Frontend Architecture
+| Category | Technologies Used |
 | :--- | :--- |
-| **Frontend Framework** | React.js (v19) + Vite |
-| **Styling & UI** | Tailwind CSS v4, Lucide React (Icons) |
-| **Animations** | Framer Motion |
-| **Charting Library** | Recharts |
-| **PDF/Data Generation** | jsPDF, jspdf-autotable, Blob API |
-| **Backend Framework** | Node.js, Express.js |
-| **Database & ORM** | MongoDB, Mongoose 9 |
-| **Security** | JWT (Cookie-based Auth), Bcrypt.js |
-| **File Processing** | Multer, CSV-Parse |
+| **Core Framework** | React 19.2 + Vite 7.3 |
+| **Routing** | React Router DOM 7.13 |
+| **Styling & Theming** | Tailwind CSS 4.2 |
+| **Animations** | Framer Motion 12.38 |
+| **Data Visualization** | Recharts 3.7 |
+| **Icons & UI Ext.** | Lucide React, React Icons, Emoji Picker React |
+| **Data Export** | jsPDF 4.2, jsPDF-AutoTable 5.0 |
+| **State & Networking** | Axios 1.13, Custom Native React Hooks |
+| **Feedback System** | React Hot Toast 2.6 |
+
+### Backend & Infrastructure
+| Category | Technologies Used |
+| :--- | :--- |
+| **Core Runtime** | Node.js + Express 5.2 |
+| **Database & ORM** | MongoDB + Mongoose 9.2 |
+| **Security & Auth** | JSON Web Tokens (JWT), BcryptJS, Cookie-Parser, Google OAuth Library |
+| **AI Integration** | Google Generative AI (Gemini SDK) 0.24 |
+| **Media Cloud Storage** | Cloudinary 2.9, Multer 2.0, Streamifier |
+| **Data Import/Export** | ExcelJS 4.4 |
+| **Email Services** | Nodemailer 8.0 |
 
 ---
 
