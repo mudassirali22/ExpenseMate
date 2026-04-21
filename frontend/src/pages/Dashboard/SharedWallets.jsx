@@ -11,6 +11,7 @@ import {
 } from 'lucide-react';
 import { AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useSharedWallets } from '../../hooks/useSharedWallets';
 
 const CATEGORIES = [
   { name: 'Household', icon: Home },
@@ -23,14 +24,13 @@ const CATEGORIES = [
 ];
 
 const SharedWallets = () => {
-  const { user, API, currencySymbol } = useAuth();
-  
-  // 1. All Base State declarations first
-  const [wallets, setWallets] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const { user, currencySymbol } = useAuth();
+
+  // 1. Base State from Hook
+  const { wallets, loading, refresh: fetchWallets, addWallet, updateWallet, deleteWallet, addExpense, addMember, handleRequestAction: hookHandleRequestAction, getStatements, stats } = useSharedWallets();
   const [selectedWallet, setSelectedWallet] = useState(null);
   const [settlementData, setSettlementData] = useState(null);
-  
+
   // 2. All Modal states
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
@@ -70,25 +70,6 @@ const SharedWallets = () => {
     }
   }, [selectedWallet, isEditModalOpen]);
 
-  const fetchWallets = async () => {
-    try {
-      const res = await fetch(`${API}/api/v1/shared-wallet/get`, { credentials: 'include' });
-      const data = await res.json();
-      if (data.success) {
-        setWallets(data.data);
-      }
-    } catch (err) {
-      console.error(err);
-      toast.error("Process failed: Connection link unstable");
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  useEffect(() => {
-    fetchWallets();
-  }, [API]);
-
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
@@ -101,21 +82,9 @@ const SharedWallets = () => {
 
   const handleUpdateWallet = async (e) => {
     e.preventDefault();
-    try {
-      const res = await fetch(`${API}/api/v1/shared-wallet/update/${selectedWallet._id}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(newWalletData),
-        credentials: 'include'
-      });
-      const data = await res.json();
-      if (data.success) {
-        toast.success("Wallet settings updated");
-        setIsEditModalOpen(false);
-        fetchWallets();
-      }
-    } catch (err) {
-      toast.error("Update failed");
+    const success = await updateWallet(selectedWallet._id, newWalletData);
+    if (success) {
+      setIsEditModalOpen(false);
     }
   };
 
@@ -139,24 +108,11 @@ const SharedWallets = () => {
       return toast.error('Name and Goal are required');
     }
     setIsSavingInline(true);
-    try {
-      const res = await fetch(`${API}/api/v1/shared-wallet/update/${id}`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(editFormData),
-        credentials: 'include'
-      });
-      const data = await res.json();
-      if (data.success) {
-        toast.success("Wallet Updated");
-        setEditingId(null);
-        fetchWallets();
-      }
-    } catch (err) {
-      toast.error("Update failed");
-    } finally {
-      setIsSavingInline(false);
+    const success = await updateWallet(id, editFormData);
+    if (success) {
+      setEditingId(null);
     }
+    setIsSavingInline(false);
   };
 
   const handleDeleteWallet = async (id) => {
@@ -174,18 +130,7 @@ const SharedWallets = () => {
           <button
             onClick={async () => {
               toast.dismiss(t.id);
-              try {
-                const res = await fetch(`${API}/api/v1/shared-wallet/delete/${id}`, {
-                  method: 'DELETE',
-                  credentials: 'include'
-                });
-                if (res.ok) {
-                  toast.success("Wallet and registry cleared");
-                  fetchWallets();
-                }
-              } catch (err) {
-                toast.error("Process failed");
-              }
+              await deleteWallet(id);
             }}
             className="btn btn-danger !py-1.5 !px-3 !text-[10px]"
           >
@@ -198,22 +143,10 @@ const SharedWallets = () => {
 
   const handleCreateWallet = async (e) => {
     e.preventDefault();
-    try {
-      const res = await fetch(`${API}/api/v1/shared-wallet/add`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(newWalletData),
-        credentials: 'include'
-      });
-      const data = await res.json();
-      if (data.success) {
-        toast.success("New wallet created");
-        setIsCreateModalOpen(false);
-        setNewWalletData({ name: '', totalBalance: '', category: 'Other', description: '' });
-        fetchWallets();
-      }
-    } catch (err) {
-      toast.error("Creation failed");
+    const success = await addWallet(newWalletData);
+    if (success) {
+      setIsCreateModalOpen(false);
+      setNewWalletData({ name: '', totalBalance: '', category: 'Other', description: '' });
     }
   };
 
@@ -257,83 +190,38 @@ const SharedWallets = () => {
   };
 
   const submitExpense = async () => {
-    try {
-      const res = await fetch(`${API}/api/v1/shared-wallet/add-expense`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ 
-          description: expenseData.description,
-          amount: Number(expenseData.amount),
-          date: expenseData.date,
-          walletId: selectedWallet._id 
-        }),
-        credentials: 'include'
-      });
-      const data = await res.json();
-      if (data.success) {
-        toast.success("Expense logged to wallet");
-        setIsExpenseModalOpen(false);
-        setExpenseData({ description: '', amount: '', date: new Date().toISOString().split('T')[0] });
-        fetchWallets();
-      }
-    } catch (err) {
-      toast.error("Logging failed");
+    const success = await addExpense(selectedWallet._id, {
+      description: expenseData.description,
+      amount: Number(expenseData.amount),
+      date: expenseData.date
+    });
+    if (success) {
+      setIsExpenseModalOpen(false);
+      setExpenseData({ description: '', amount: '', date: new Date().toISOString().split('T')[0] });
     }
   };
 
   const handleAddMember = async (e) => {
     e.preventDefault();
-    try {
-      const res = await fetch(`${API}/api/v1/shared-wallet/add-member`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ walletId: selectedWallet._id, email: memberEmail }),
-        credentials: 'include'
-      });
-      const data = await res.json();
-      if (data.success) {
-        toast.success(data.message);
-        setIsMemberModalOpen(false);
-        setMemberEmail('');
-        fetchWallets();
-      } else {
-        toast.error(data.message);
-      }
-    } catch (err) {
-      toast.error("Handshake failed");
+    const success = await addMember(selectedWallet._id, memberEmail);
+    if (success) {
+      setIsMemberModalOpen(false);
+      setMemberEmail('');
     }
   };
-  
+
   const handleRequestAction = async (requestId, action) => {
-    try {
-      const res = await fetch(`${API}/api/v1/shared-wallet/handle-request`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ walletId: selectedWallet._id, requestId, action }),
-        credentials: 'include'
-      });
-      const data = await res.json();
-      if (data.success) {
-        toast.success(data.message);
-        // Refresh settlements and wallets
-        fetchSettlements(selectedWallet._id);
-        fetchWallets();
-      }
-    } catch (err) {
-      toast.error("Process failed");
+    const success = await hookHandleRequestAction(selectedWallet._id, requestId, action);
+    if (success) {
+      fetchSettlements(selectedWallet._id);
     }
   };
 
   const fetchSettlements = async (walletId) => {
-    try {
-      const res = await fetch(`${API}/api/v1/shared-wallet/statements/${walletId}`, { credentials: 'include' });
-      const data = await res.json();
-      if (data.success) {
-        setSettlementData(data.data);
-        setIsSettlementsModalOpen(true);
-      }
-    } catch (err) {
-      toast.error("Settlement data unreachable");
+    const data = await getStatements(walletId);
+    if (data) {
+      setSettlementData(data);
+      setIsSettlementsModalOpen(true);
     }
   };
 
@@ -427,10 +315,6 @@ const SharedWallets = () => {
     return Array.from(memberMap.values());
   }, [wallets, selectedWallet, user]);
 
-  const totalPoolValue = wallets.reduce((acc, w) => acc + (w.targetBudget || 0), 0);
-  const totalCollected = wallets.reduce((acc, w) => acc + (w.totalBalance || 0), 0);
-  const totalCollaborators = allUniqueMembers.length;
-
   if (loading) {
     return (
       <div className="page-container flex items-center justify-center min-h-[60vh]">
@@ -462,10 +346,10 @@ const SharedWallets = () => {
           <div className="relative z-10">
             <p className="stat-label">Group Budget</p>
             <h3 className="stat-value text-3xl sm:text-4xl mt-1">
-              {currencySymbol} {totalPoolValue.toLocaleString()}
+              {currencySymbol} {stats.totalPoolValue.toLocaleString()}
             </h3>
             <p className="text-[10px] font-bold text-success uppercase tracking-widest mt-2">
-              {currencySymbol} {totalCollected.toLocaleString()} Saved
+              {currencySymbol} {stats.totalCollected.toLocaleString()} Saved
             </p>
           </div>
           <div className="flex items-center gap-4 mt-6 relative z-10">
@@ -482,7 +366,7 @@ const SharedWallets = () => {
                 </div>
               ))}
             </div>
-            <p className="text-xs text-on-surface-variant font-medium uppercase tracking-wider">{totalCollaborators} Members Joined</p>
+            <p className="text-xs text-on-surface-variant font-medium uppercase tracking-wider">{stats.totalCollaborators} Members Joined</p>
           </div>
         </div>
 
@@ -577,12 +461,12 @@ const SharedWallets = () => {
                     <div className="flex gap-1 opacity-10 sm:opacity-0 group-hover:opacity-100 transition-opacity">
                       {!isEditing && user?._id === wallet.createdBy?._id && (
                         <>
-                          <button 
-                            onClick={(e) => { 
-                              e.stopPropagation(); 
-                              setSelectedWallet(wallet); 
-                              startInlineEdit(wallet); 
-                            }} 
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              setSelectedWallet(wallet);
+                              startInlineEdit(wallet);
+                            }}
                             className="p-2 text-on-surface-variant hover:text-primary transition-colors"
                             title="Inline Edit"
                           >
@@ -595,74 +479,74 @@ const SharedWallets = () => {
                   </div>
 
                   {/* Bulky edit block removed in favor of integrated inline edit */}
-                    <div className="bg-surface-container/50 p-4 rounded-xl border border-glass-border mb-6">
-                      <div className="flex justify-between items-center mb-1.5 px-0.5">
-                        <span className="text-[10px] font-bold text-on-surface-variant uppercase tracking-widest">Saved Progress</span>
-                        {editingId === wallet._id ? (
-                           <input
-                             type="number"
-                             value={editFormData.totalBalance}
-                             onChange={(e) => setEditFormData({ ...editFormData, totalBalance: e.target.value })}
-                             className="w-24 bg-surface-lowest border border-glass-border rounded-lg px-2 py-0.5 text-xs font-bold text-on-surface focus:border-primary outline-none text-right"
-                             placeholder="Limit"
-                           />
-                        ) : (
-                          <span className="text-xs font-bold text-on-surface">{currencySymbol} {(wallet.totalBalance || 0).toLocaleString()} / {currencySymbol} {(wallet.targetBudget || 0).toLocaleString()}</span>
-                        )}
-                      </div>
-                      <div className="progress-bar !h-2 bg-background relative overflow-hidden">
-                        <div className={`progress-fill ${(wallet.totalBalance || 0) >= (wallet.targetBudget || 0) ? 'bg-success' : 'bg-primary'}`} style={{ width: `${Math.min(100, ((wallet.totalBalance || 0) / (wallet.targetBudget || 1)) * 100)}%` }} />
-                      </div>
+                  <div className="bg-surface-container/50 p-4 rounded-xl border border-glass-border mb-6">
+                    <div className="flex justify-between items-center mb-1.5 px-0.5">
+                      <span className="text-[10px] font-bold text-on-surface-variant uppercase tracking-widest">Saved Progress</span>
                       {editingId === wallet._id ? (
-                        <div className="mt-3">
-                           <textarea
-                             value={editFormData.description}
-                             onChange={(e) => setEditFormData({ ...editFormData, description: e.target.value })}
-                             rows="2"
-                             placeholder="Wallet description..."
-                             className="w-full bg-surface-lowest border border-glass-border rounded-lg px-2 py-1.5 text-[10px] font-medium text-on-surface focus:border-primary outline-none resize-none italic"
-                           />
-                        </div>
+                        <input
+                          type="number"
+                          value={editFormData.totalBalance}
+                          onChange={(e) => setEditFormData({ ...editFormData, totalBalance: e.target.value })}
+                          className="w-24 bg-surface-lowest border border-glass-border rounded-lg px-2 py-0.5 text-xs font-bold text-on-surface focus:border-primary outline-none text-right"
+                          placeholder="Limit"
+                        />
                       ) : (
-                        wallet.description && (
-                          <div className="mt-3 px-1">
-                             <p className="text-[10px] font-medium text-on-surface-variant leading-relaxed line-clamp-2 opacity-80 italic">
-                                "{wallet.description}"
-                             </p>
-                          </div>
-                        )
-                      )}
-                      {!isEditing && Math.max(0, (wallet.totalBalance || 0) - (wallet.targetBudget || 0)) > 0 && (
-                        <div className="flex items-center gap-1 mt-2">
-                          <span className="w-1.5 h-1.5 rounded-full bg-success animate-pulse" />
-                          <p className="text-[10px] font-bold text-success uppercase tracking-wider italic">Extra Saved: {currencySymbol} {Math.max(0, (wallet.totalBalance || 0) - (wallet.targetBudget || 0)).toLocaleString()}</p>
-                        </div>
-                      )}
-                      {isEditing ? (
-                         <p className="text-[9px] font-bold text-primary mt-1.5 uppercase tracking-widest opacity-80">Editing Wallet Goal</p>
-                      ) : (
-                         <p className="text-[9px] font-bold text-on-surface-variant mt-1.5 uppercase tracking-widest opacity-60">Total Goal: {currencySymbol} {(wallet.targetBudget || 0).toLocaleString()}</p>
+                        <span className="text-xs font-bold text-on-surface">{currencySymbol} {(wallet.totalBalance || 0).toLocaleString()} / {currencySymbol} {(wallet.targetBudget || 0).toLocaleString()}</span>
                       )}
                     </div>
+                    <div className="progress-bar !h-2 bg-background relative overflow-hidden">
+                      <div className={`progress-fill ${(wallet.totalBalance || 0) >= (wallet.targetBudget || 0) ? 'bg-success' : 'bg-primary'}`} style={{ width: `${Math.min(100, ((wallet.totalBalance || 0) / (wallet.targetBudget || 1)) * 100)}%` }} />
+                    </div>
+                    {editingId === wallet._id ? (
+                      <div className="mt-3">
+                        <textarea
+                          value={editFormData.description}
+                          onChange={(e) => setEditFormData({ ...editFormData, description: e.target.value })}
+                          rows="2"
+                          placeholder="Wallet description..."
+                          className="w-full bg-surface-lowest border border-glass-border rounded-lg px-2 py-1.5 text-[10px] font-medium text-on-surface focus:border-primary outline-none resize-none italic"
+                        />
+                      </div>
+                    ) : (
+                      wallet.description && (
+                        <div className="mt-3 px-1">
+                          <p className="text-[10px] font-medium text-on-surface-variant leading-relaxed line-clamp-2 opacity-80 italic">
+                            "{wallet.description}"
+                          </p>
+                        </div>
+                      )
+                    )}
+                    {!isEditing && Math.max(0, (wallet.totalBalance || 0) - (wallet.targetBudget || 0)) > 0 && (
+                      <div className="flex items-center gap-1 mt-2">
+                        <span className="w-1.5 h-1.5 rounded-full bg-success animate-pulse" />
+                        <p className="text-[10px] font-bold text-success uppercase tracking-wider italic">Extra Saved: {currencySymbol} {Math.max(0, (wallet.totalBalance || 0) - (wallet.targetBudget || 0)).toLocaleString()}</p>
+                      </div>
+                    )}
+                    {isEditing ? (
+                      <p className="text-[9px] font-bold text-primary mt-1.5 uppercase tracking-widest opacity-80">Editing Wallet Goal</p>
+                    ) : (
+                      <p className="text-[9px] font-bold text-on-surface-variant mt-1.5 uppercase tracking-widest opacity-60">Total Goal: {currencySymbol} {(wallet.targetBudget || 0).toLocaleString()}</p>
+                    )}
+                  </div>
 
                   {/* Pending Permissions Alert on Card (Denser/Compact) */}
                   {!isEditing && user?._id === wallet.createdBy?._id && wallet.requests?.some(r => r.status === 'Pending') && (
                     <div className="mb-6 px-1 animate-pulse">
                       <div className="bg-secondary/10 border border-secondary/20 rounded-xl p-2.5 flex items-center justify-between gap-3">
-                         <div className="flex items-center gap-2 min-w-0">
-                           <div className="w-6 h-6 rounded-lg bg-secondary/20 flex items-center justify-center text-secondary shrink-0">
-                             <Handshake size={14} />
-                           </div>
-                           <p className="text-[10px] font-bold text-secondary uppercase tracking-wider truncate">
-                             {wallet.requests.filter(r => r.status === 'Pending').length} Request Pending
-                           </p>
-                         </div>
-                         <button 
-                           onClick={(e) => { e.stopPropagation(); fetchSettlements(wallet._id); }}
-                           className="text-[9px] font-black text-secondary hover:underline uppercase tracking-tighter shrink-0"
-                         >
-                           Manage
-                         </button>
+                        <div className="flex items-center gap-2 min-w-0">
+                          <div className="w-6 h-6 rounded-lg bg-secondary/20 flex items-center justify-center text-secondary shrink-0">
+                            <Handshake size={14} />
+                          </div>
+                          <p className="text-[10px] font-bold text-secondary uppercase tracking-wider truncate">
+                            {wallet.requests.filter(r => r.status === 'Pending').length} Request Pending
+                          </p>
+                        </div>
+                        <button
+                          onClick={(e) => { e.stopPropagation(); fetchSettlements(wallet._id); }}
+                          className="text-[9px] font-black text-secondary hover:underline uppercase tracking-tighter shrink-0"
+                        >
+                          Manage
+                        </button>
                       </div>
                     </div>
                   )}
@@ -724,15 +608,15 @@ const SharedWallets = () => {
                   <div className="grid grid-cols-3 gap-2 mt-auto pt-6 border-t border-glass-border border-dashed shrink-0">
                     {editingId === wallet._id ? (
                       <>
-                        <button 
-                          onClick={(e) => { e.stopPropagation(); handleInlineSave(wallet._id); }} 
+                        <button
+                          onClick={(e) => { e.stopPropagation(); handleInlineSave(wallet._id); }}
                           disabled={isSavingInline}
                           className="col-span-2 btn btn-primary text-[10px] font-black py-2.5 justify-center uppercase tracking-widest"
                         >
                           {isSavingInline ? 'SAVING...' : 'SAVE CHANGES'}
                         </button>
-                        <button 
-                          onClick={(e) => { e.stopPropagation(); cancelInlineEdit(); }} 
+                        <button
+                          onClick={(e) => { e.stopPropagation(); cancelInlineEdit(); }}
                           className="btn btn-outline text-[10px] font-black py-2.5 justify-center uppercase tracking-widest"
                         >
                           CANCEL
@@ -987,28 +871,28 @@ const SharedWallets = () => {
 
       <Modal isOpen={isExpenseModalOpen} onClose={() => setIsExpenseModalOpen(false)} title="Add Money">
         <form onSubmit={handleAddExpense} className="space-y-5">
-           <div className="flex items-center justify-between mb-4 bg-surface-lowest p-4 rounded-2xl border border-glass-border">
-             <div>
-               <p className="text-[9px] font-black text-primary uppercase tracking-[0.2em] mb-1 opacity-60">To Wallet</p>
-               <h4 className="text-base font-black text-on-surface truncate pr-4">{selectedWallet?.name}</h4>
-             </div>
-             <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center text-primary border border-primary/20 shrink-0">
-               <CreditCard size={18} />
-             </div>
-           </div>
+          <div className="flex items-center justify-between mb-4 bg-surface-lowest p-4 rounded-2xl border border-glass-border">
+            <div>
+              <p className="text-[9px] font-black text-primary uppercase tracking-[0.2em] mb-1 opacity-60">To Wallet</p>
+              <h4 className="text-base font-black text-on-surface truncate pr-4">{selectedWallet?.name}</h4>
+            </div>
+            <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center text-primary border border-primary/20 shrink-0">
+              <CreditCard size={18} />
+            </div>
+          </div>
 
           <div className="space-y-4">
             <div>
               <label className="block text-[10px] font-extrabold uppercase tracking-widest text-on-surface-variant mb-1.5 ml-1">What did you pay for?</label>
               <div className="relative">
                 <AlignLeft size={14} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-on-surface-variant/60" />
-                <input 
-                  required 
-                  type="text" 
-                  placeholder="e.g. Electricity Bill" 
-                  className="w-full bg-surface-container border border-glass-border rounded-xl pl-10 pr-4 py-3.5 text-sm font-bold text-on-surface placeholder:text-on-surface-variant/30 focus:outline-none focus:ring-1 focus:ring-primary/40 focus:border-primary/50 transition-all" 
-                  value={expenseData.description} 
-                  onChange={(e) => setExpenseData({ ...expenseData, description: e.target.value })} 
+                <input
+                  required
+                  type="text"
+                  placeholder="e.g. Electricity Bill"
+                  className="w-full bg-surface-container border border-glass-border rounded-xl pl-10 pr-4 py-3.5 text-sm font-bold text-on-surface placeholder:text-on-surface-variant/30 focus:outline-none focus:ring-1 focus:ring-primary/40 focus:border-primary/50 transition-all"
+                  value={expenseData.description}
+                  onChange={(e) => setExpenseData({ ...expenseData, description: e.target.value })}
                 />
               </div>
             </div>
@@ -1016,22 +900,22 @@ const SharedWallets = () => {
             <div className="grid grid-cols-2 gap-4">
               <div>
                 <label className="block text-[10px] font-extrabold uppercase tracking-widest text-on-surface-variant mb-1.5 ml-1">Amount ({currencySymbol})</label>
-                <input 
-                  required 
-                  type="number" 
-                  placeholder="0" 
-                  className="w-full bg-surface-container border border-glass-border rounded-xl px-4 py-3.5 text-sm font-black text-on-surface placeholder:text-on-surface-variant/30 focus:outline-none focus:ring-1 focus:ring-primary/40 focus:border-primary/50 transition-all" 
-                  value={expenseData.amount} 
-                  onChange={(e) => setExpenseData({ ...expenseData, amount: e.target.value })} 
+                <input
+                  required
+                  type="number"
+                  placeholder="0"
+                  className="w-full bg-surface-container border border-glass-border rounded-xl px-4 py-3.5 text-sm font-black text-on-surface placeholder:text-on-surface-variant/30 focus:outline-none focus:ring-1 focus:ring-primary/40 focus:border-primary/50 transition-all"
+                  value={expenseData.amount}
+                  onChange={(e) => setExpenseData({ ...expenseData, amount: e.target.value })}
                 />
               </div>
               <div>
                 <label className="block text-[10px] font-extrabold uppercase tracking-widest text-on-surface-variant mb-1.5 ml-1">Date</label>
                 <div className="relative">
                   <Calendar size={14} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-on-surface-variant/60 pointer-events-none" />
-                  <input 
-                    type="date" 
-                    className="w-full bg-surface-container border border-glass-border rounded-xl pl-10 pr-3 py-3 text-[11px] font-bold text-on-surface focus:outline-none focus:ring-1 focus:ring-primary/40 focus:border-primary/50 transition-all shadow-sm" 
+                  <input
+                    type="date"
+                    className="w-full bg-surface-container border border-glass-border rounded-xl pl-10 pr-3 py-3 text-[11px] font-bold text-on-surface focus:outline-none focus:ring-1 focus:ring-primary/40 focus:border-primary/50 transition-all shadow-sm"
                     value={expenseData.date}
                     onChange={(e) => setExpenseData({ ...expenseData, date: e.target.value })}
                   />
@@ -1081,20 +965,20 @@ const SharedWallets = () => {
             {/* Premium Autocomplete Dropdown */}
             <AnimatePresence>
               {showSuggestions && allUniqueMembers.length > 0 && (
-                <motion.div 
+                <motion.div
                   initial={{ opacity: 0, y: -10 }}
                   animate={{ opacity: 1, y: 0 }}
                   exit={{ opacity: 0, y: -10 }}
                   className="absolute z-[60] left-0 right-0 top-[100%] mt-2 bg-surface-lowest border border-glass-border rounded-2xl shadow-2xl overflow-hidden max-h-[220px] overflow-y-auto custom-scrollbar backdrop-blur-xl"
                 >
                   <div className="p-2 border-b border-glass-border bg-surface-container/30">
-                     <p className="text-[9px] font-black text-on-surface-variant uppercase tracking-widest opacity-60 ml-1">Suggestions</p>
+                    <p className="text-[9px] font-black text-on-surface-variant uppercase tracking-widest opacity-60 ml-1">Suggestions</p>
                   </div>
                   {(() => {
-                    const filtered = allUniqueMembers.filter(m => 
+                    const filtered = allUniqueMembers.filter(m =>
                       (m.email || m.user?.email || '').toLowerCase().includes(memberEmail.toLowerCase())
                     );
-                    
+
                     if (filtered.length === 0) {
                       return <div className="p-4 text-center text-[10px] font-bold text-on-surface-variant italic">No matches found</div>;
                     }
@@ -1112,7 +996,7 @@ const SharedWallets = () => {
                           className="w-full flex items-center gap-3 px-4 py-3 hover:bg-primary/5 transition-colors border-b border-glass-border/50 last:border-0 group"
                         >
                           <div className="w-8 h-8 rounded-xl bg-surface-container border border-glass-border flex items-center justify-center text-[10px] font-black overflow-hidden group-hover:border-primary/30 shrink-0">
-                             {m.user?.profileImageUrl ? <img src={m.user.profileImageUrl} alt="" className="w-full h-full object-cover" /> : email.charAt(0).toUpperCase()}
+                            {m.user?.profileImageUrl ? <img src={m.user.profileImageUrl} alt="" className="w-full h-full object-cover" /> : email.charAt(0).toUpperCase()}
                           </div>
                           <div className="text-left min-w-0">
                             <p className="text-[11px] font-bold text-on-surface truncate">{m.user?.fullName || email.split('@')[0]}</p>
@@ -1162,46 +1046,42 @@ const SharedWallets = () => {
             </div>
           )}
 
-          {/* Pending Requests Section (Restored & Compacted) */}
-          {selectedWallet?.requests?.filter(r => r.status === 'Pending').length > 0 && (
+          {/* Pending Requests Section — Owner Only */}
+          {(selectedWallet?.createdBy?._id === user?._id || selectedWallet?.createdBy === user?._id) &&
+           selectedWallet?.requests?.filter(r => r.status === 'Pending').length > 0 && (
             <div className="space-y-3">
               <h4 className="text-[9px] font-black text-secondary uppercase tracking-[0.3em] flex items-center gap-2">
                 Pending Actions
               </h4>
               <div className="space-y-2">
-                {selectedWallet.requests.filter(r => r.status === 'Pending').map((req, i) => {
-                  const isOwner = selectedWallet.createdBy?._id === user?._id || selectedWallet.createdBy === user?._id;
-                  return (
-                    <div key={i} className="p-4 rounded-2xl bg-secondary/[0.02] border border-secondary/10 flex flex-col gap-3">
-                      <div className="flex justify-between items-center">
-                        <div className="min-w-0">
-                          <p className="text-[10px] font-black text-on-surface">
-                            {req.requestedByEmail.split('@')[0]} Extra Contribution
-                          </p>
-                          <p className="text-[9px] text-on-surface-variant opacity-60 font-medium truncate italic">"{req.description}"</p>
-                        </div>
-                        <p className="text-sm font-black text-secondary shrink-0">{currencySymbol} {req.amount.toLocaleString()}</p>
+                {selectedWallet.requests.filter(r => r.status === 'Pending').map((req, i) => (
+                  <div key={i} className="p-4 rounded-2xl bg-secondary/[0.02] border border-secondary/10 flex flex-col gap-3">
+                    <div className="flex justify-between items-center">
+                      <div className="min-w-0">
+                        <p className="text-[10px] font-black text-on-surface">
+                          {req.requestedByEmail.split('@')[0]} Extra Contribution
+                        </p>
+                        <p className="text-[9px] text-on-surface-variant opacity-60 font-medium truncate italic">"{req.description}"</p>
                       </div>
-                      
-                      {isOwner && (
-                        <div className="flex gap-2">
-                          <button 
-                            onClick={() => handleRequestAction(req._id, 'Accepted')}
-                            className="flex-1 py-1.5 bg-secondary text-white text-[9px] font-black rounded-lg hover:bg-secondary-dark transition-all uppercase tracking-widest"
-                          >
-                            Accept
-                          </button>
-                          <button 
-                            onClick={() => handleRequestAction(req._id, 'Rejected')}
-                            className="flex-1 py-1.5 bg-surface-container text-on-surface-variant text-[9px] font-black rounded-lg hover:bg-surface-container-high transition-all uppercase tracking-[0.15em] border border-glass-border"
-                          >
-                            Reject
-                          </button>
-                        </div>
-                      )}
+                      <p className="text-sm font-black text-secondary shrink-0">{currencySymbol} {req.amount.toLocaleString()}</p>
                     </div>
-                  );
-                })}
+
+                    <div className="flex gap-2">
+                      <button
+                        onClick={() => handleRequestAction(req._id, 'Accepted')}
+                        className="flex-1 py-1.5 bg-secondary text-white text-[9px] font-black rounded-lg hover:bg-secondary-dark transition-all uppercase tracking-widest"
+                      >
+                        Accept
+                      </button>
+                      <button
+                        onClick={() => handleRequestAction(req._id, 'Rejected')}
+                        className="flex-1 py-1.5 bg-surface-container text-on-surface-variant text-[9px] font-black rounded-lg hover:bg-surface-container-high transition-all uppercase tracking-[0.15em] border border-glass-border"
+                      >
+                        Reject
+                      </button>
+                    </div>
+                  </div>
+                ))}
               </div>
             </div>
           )}
@@ -1267,5 +1147,6 @@ const SharedWallets = () => {
     </div>
   );
 };
+
 
 export default SharedWallets;

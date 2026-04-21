@@ -219,19 +219,19 @@ const Portfolio = () => {
       </div>
 
       {/* Summary Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
-        <div className="md:col-span-2 stat-card bg-surface-container/10 border-primary/20 relative overflow-hidden flex flex-col justify-between min-h-[160px]">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-8">
+        <div className="sm:col-span-2 stat-card bg-surface-container/10 border-primary/20 relative overflow-hidden flex flex-col justify-between min-h-[140px] lg:min-h-[160px]">
           <div className="absolute top-0 right-0 w-64 h-64 bg-primary/5 blur-3xl rounded-full -mr-20 -mt-20" />
           <div className="relative z-10">
             <p className="stat-label">Total Portfolio Value</p>
-            <div className="flex items-end gap-3 mt-1">
-              <h3 className="stat-value text-3xl sm:text-4xl">{currencySymbol} {totalValue.toLocaleString(undefined, { maximumFractionDigits: 0 })}</h3>
+            <div className="flex items-end gap-3 mt-1 flex-wrap">
+              <h3 className="stat-value text-2xl sm:text-3xl lg:text-4xl">{currencySymbol} {totalValue.toLocaleString(undefined, { maximumFractionDigits: 0 })}</h3>
               <div className={`flex items-center font-black text-[10px] px-2 py-1 rounded-md mb-2 ${totalProfit >= 0 ? 'text-success bg-success/10' : 'text-error bg-error/10'}`}>
                 {totalProfit >= 0 ? <ArrowUpRight size={10} className="mr-1" /> : <ArrowDownRight size={10} className="mr-1" />}
                 {Math.abs(profitPercentage).toFixed(2)}%
               </div>
             </div>
-            <div className="flex items-center gap-4 mt-6">
+            <div className="flex items-center gap-4 mt-4">
               <div className="flex flex-col">
                 <span className="text-[9px] font-bold text-on-surface-variant uppercase tracking-widest opacity-40">Total Invested</span>
                 <span className="text-xs font-black text-on-surface">{currencySymbol} {totalInvested.toLocaleString()}</span>
@@ -347,84 +347,132 @@ const Portfolio = () => {
             </div>
           </div>
 
-          <div className="stat-card !p-0 overflow-hidden border border-glass-border shadow-2xl shadow-primary/5">
-            <div className="overflow-x-auto">
-              <table className="data-table w-full text-left">
-                <thead>
-                  <tr className="bg-surface-container/30">
-                    <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-on-surface-variant opacity-60">Investment</th>
-                    <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-on-surface-variant opacity-60">Current Value</th>
-                    <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-on-surface-variant opacity-60">Change</th>
-                    <th className="px-6 py-4 text-right text-[10px] font-black uppercase tracking-widest text-on-surface-variant opacity-60 pr-8">Actions</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-glass-border">
-                  {assets.length > 0 ? assets.map((asset) => {
-                    const cost = asset.buyPrice * asset.amount;
-                    const val = asset.currentValue || cost;
-                    const gain = val - cost;
-                    const gainPerc = cost > 0 ? (gain / cost) * 100 : 0;
-                    const isPositive = gain >= 0;
-
-                    return (
-                      <tr key={asset._id} className="group hover:bg-primary/[0.03] transition-all duration-300">
-                        <td className="px-6 py-5">
-                          <div className="flex items-center gap-4">
-                            <div className="w-12 h-12 rounded-2xl bg-primary/10 border border-primary/20 flex items-center justify-center text-primary group-hover:scale-110 transition-transform duration-500">
-                              {ASSET_ICONS[asset.assetType] || <PieIcon size={20} />}
-                            </div>
-                            <div className="min-w-0">
-                              <p className="text-sm font-black text-on-surface truncate pr-2 uppercase tracking-tight">{asset.assetName}</p>
-                              <div className="flex items-center gap-2 mt-0.5">
-                                <span className="text-[9px] font-black text-primary uppercase tracking-widest">{asset.ticker || 'HODL'}</span>
-                                <span className="w-1 h-1 rounded-full bg-on-surface-variant opacity-30" />
-                                <span className="text-[9px] font-bold text-on-surface-variant uppercase tracking-tighter opacity-60">{asset.platform || 'Direct'}</span>
-                              </div>
-                            </div>
-                          </div>
-                        </td>
-                        <td className="px-6 py-5">
-                          <p className="text-xs font-black text-on-surface">{currencySymbol} {val.toLocaleString()}</p>
-                          <p className="text-[9px] font-bold text-on-surface-variant uppercase tracking-widest opacity-40 mt-0.5">
-                            {asset.amount} Units @ {asset.buyPrice}
-                          </p>
-                        </td>
-                        <td className="px-6 py-5">
-                          <div className={`flex items-center gap-1.5 text-xs font-black ${isPositive ? 'text-success' : 'text-error'}`}>
-                            {isPositive ? <ArrowUpRight size={14} /> : <ArrowDownRight size={14} />}
-                            {Math.abs(gainPerc).toFixed(2)}%
-                          </div>
-                          <p className={`text-[9px] font-bold uppercase tracking-tighter opacity-60 mt-0.5 ${isPositive ? 'text-success' : 'text-error'}`}>
-                            {isPositive ? '+' : ''}{currencySymbol} {Math.abs(gain).toLocaleString()}
-                          </p>
-                        </td>
-                        <td className="px-6 py-5 text-right pr-6">
-                          <div className="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-all duration-300">
-                            <button onClick={() => handleEdit(asset)} className="p-2.5 rounded-xl bg-surface-container text-primary hover:bg-primary hover:text-white transition-all shadow-sm">
-                              <Edit2 size={12} />
-                            </button>
-                            <button onClick={() => openDeleteModal(asset)} className="p-2.5 rounded-xl bg-surface-container text-error hover:bg-error hover:text-white transition-all shadow-sm">
-                              <Trash2 size={12} />
-                            </button>
-                          </div>
-                        </td>
+          {assets.length > 0 ? (
+            <>
+              {/* Desktop table */}
+              <div className="hidden sm:block stat-card !p-0 overflow-hidden border border-glass-border shadow-2xl shadow-primary/5">
+                <div className="overflow-x-auto">
+                  <table className="data-table w-full text-left">
+                    <thead>
+                      <tr className="bg-surface-container/30">
+                        <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-on-surface-variant opacity-60">Investment</th>
+                        <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-on-surface-variant opacity-60">Current Value</th>
+                        <th className="px-6 py-4 text-[10px] font-black uppercase tracking-widest text-on-surface-variant opacity-60">Change</th>
+                        <th className="px-6 py-4 text-right text-[10px] font-black uppercase tracking-widest text-on-surface-variant opacity-60 pr-8">Actions</th>
                       </tr>
-                    );
-                  }) : (
-                    <tr>
-                      <td colSpan="4" className="py-24 text-center">
-                        <div className="flex flex-col items-center opacity-20">
-                          <Wallet size={48} className="mb-4" />
-                          <p className="text-sm font-black uppercase tracking-[0.2em]">No investments found</p>
-                          <button onClick={() => setIsModalOpen(true)} className="btn btn-primary text-[10px] px-6 mt-6 uppercase tracking-widest">Add First Investment</button>
+                    </thead>
+                    <tbody className="divide-y divide-glass-border">
+                      {assets.map((asset) => {
+                        const cost = asset.buyPrice * asset.amount;
+                        const val = asset.currentValue || cost;
+                        const gain = val - cost;
+                        const gainPerc = cost > 0 ? (gain / cost) * 100 : 0;
+                        const isPositive = gain >= 0;
+                        return (
+                          <tr key={asset._id} className="group hover:bg-primary/[0.03] transition-all duration-300">
+                            <td className="px-6 py-5">
+                              <div className="flex items-center gap-4">
+                                <div className="w-12 h-12 rounded-2xl bg-primary/10 border border-primary/20 flex items-center justify-center text-primary group-hover:scale-110 transition-transform duration-500">
+                                  {ASSET_ICONS[asset.assetType] || <PieIcon size={20} />}
+                                </div>
+                                <div className="min-w-0">
+                                  <p className="text-sm font-black text-on-surface truncate pr-2 uppercase tracking-tight">{asset.assetName}</p>
+                                  <div className="flex items-center gap-2 mt-0.5">
+                                    <span className="text-[9px] font-black text-primary uppercase tracking-widest">{asset.ticker || 'HODL'}</span>
+                                    <span className="w-1 h-1 rounded-full bg-on-surface-variant opacity-30" />
+                                    <span className="text-[9px] font-bold text-on-surface-variant uppercase tracking-tighter opacity-60">{asset.platform || 'Direct'}</span>
+                                  </div>
+                                </div>
+                              </div>
+                            </td>
+                            <td className="px-6 py-5">
+                              <p className="text-xs font-black text-on-surface">{currencySymbol} {val.toLocaleString()}</p>
+                              <p className="text-[9px] font-bold text-on-surface-variant uppercase tracking-widest opacity-40 mt-0.5">{asset.amount} Units @ {asset.buyPrice}</p>
+                            </td>
+                            <td className="px-6 py-5">
+                              <div className={`flex items-center gap-1.5 text-xs font-black ${isPositive ? 'text-success' : 'text-error'}`}>
+                                {isPositive ? <ArrowUpRight size={14} /> : <ArrowDownRight size={14} />}
+                                {Math.abs(gainPerc).toFixed(2)}%
+                              </div>
+                              <p className={`text-[9px] font-bold uppercase tracking-tighter opacity-60 mt-0.5 ${isPositive ? 'text-success' : 'text-error'}`}>
+                                {isPositive ? '+' : ''}{currencySymbol} {Math.abs(gain).toLocaleString()}
+                              </p>
+                            </td>
+                            <td className="px-6 py-5 text-right pr-6">
+                              <div className="flex justify-end gap-2 opacity-0 group-hover:opacity-100 transition-all duration-300">
+                                <button onClick={() => handleEdit(asset)} className="p-2.5 rounded-xl bg-surface-container text-primary hover:bg-primary hover:text-white transition-all shadow-sm">
+                                  <Edit2 size={12} />
+                                </button>
+                                <button onClick={() => openDeleteModal(asset)} className="p-2.5 rounded-xl bg-surface-container text-error hover:bg-error hover:text-white transition-all shadow-sm">
+                                  <Trash2 size={12} />
+                                </button>
+                              </div>
+                            </td>
+                          </tr>
+                        );
+                      })}
+                    </tbody>
+                  </table>
+                </div>
+              </div>
+
+              {/* Mobile card list */}
+              <div className="sm:hidden space-y-3">
+                {assets.map((asset) => {
+                  const cost = asset.buyPrice * asset.amount;
+                  const val = asset.currentValue || cost;
+                  const gain = val - cost;
+                  const gainPerc = cost > 0 ? (gain / cost) * 100 : 0;
+                  const isPositive = gain >= 0;
+                  return (
+                    <div key={asset._id} className="stat-card !p-4 flex flex-col gap-3">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-2xl bg-primary/10 border border-primary/20 flex items-center justify-center text-primary shrink-0">
+                          {ASSET_ICONS[asset.assetType] || <PieIcon size={18} />}
                         </div>
-                      </td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
+                        <div className="min-w-0 flex-1">
+                          <p className="text-sm font-black text-on-surface truncate uppercase tracking-tight">{asset.assetName}</p>
+                          <div className="flex items-center gap-2">
+                            <span className="text-[9px] font-black text-primary uppercase tracking-widest">{asset.ticker || 'HODL'}</span>
+                            <span className="text-[9px] text-on-surface-variant opacity-50">{asset.platform || 'Direct'}</span>
+                          </div>
+                        </div>
+                        {/* Always visible on mobile */}
+                        <div className="flex gap-1.5 shrink-0">
+                          <button onClick={() => handleEdit(asset)} className="p-2 rounded-xl bg-surface-container text-primary hover:bg-primary hover:text-white transition-all">
+                            <Edit2 size={12} />
+                          </button>
+                          <button onClick={() => openDeleteModal(asset)} className="p-2 rounded-xl bg-surface-container text-error hover:bg-error hover:text-white transition-all">
+                            <Trash2 size={12} />
+                          </button>
+                        </div>
+                      </div>
+                      <div className="flex justify-between items-end">
+                        <div>
+                          <p className="text-[9px] text-on-surface-variant opacity-50 uppercase tracking-widest">{asset.amount} units @ {asset.buyPrice}</p>
+                          <p className="text-sm font-black text-on-surface mt-0.5">{currencySymbol} {val.toLocaleString()}</p>
+                        </div>
+                        <div className={`flex items-center gap-1 text-xs font-black ${isPositive ? 'text-success' : 'text-error'}`}>
+                          {isPositive ? <ArrowUpRight size={13} /> : <ArrowDownRight size={13} />}
+                          {Math.abs(gainPerc).toFixed(2)}%
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </>
+          ) : (
+            <div className="stat-card !p-0 overflow-hidden border border-glass-border">
+              <div className="py-24 text-center">
+                <div className="flex flex-col items-center opacity-20">
+                  <Wallet size={48} className="mb-4" />
+                  <p className="text-sm font-black uppercase tracking-[0.2em]">No investments found</p>
+                  <button onClick={() => setIsModalOpen(true)} className="btn btn-primary text-[10px] px-6 mt-6 uppercase tracking-widest">Add First Investment</button>
+                </div>
+              </div>
             </div>
-          </div>
+          )}
         </div>
       </div>
 
@@ -501,7 +549,7 @@ const Portfolio = () => {
           {/* Section 3: Financial Metrics */}
           <div className="space-y-4">
             <h4 className="text-[10px] font-black uppercase tracking-[0.2em] text-primary/80 border-b border-glass-border pb-2 ml-1">Financial Metrics</h4>
-            <div className="grid grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
               <div className="space-y-2">
                 <label className="text-[10px] font-bold text-on-surface-variant uppercase tracking-widest ml-1">Quantity</label>
                 <input required type="number" step="any" value={formData.quantity} onChange={e => setFormData({ ...formData, quantity: e.target.value })} className="input-field !py-4 font-bold" placeholder="0.00" />

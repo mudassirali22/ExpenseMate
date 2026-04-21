@@ -36,7 +36,7 @@ const ForgotPassword = () => {
         {/* Brand */}
         <div className="mb-10 text-center">
           <h1 className="text-3xl font-black tracking-tighter bg-gradient-to-br from-primary to-primary-container bg-clip-text text-transparent">
-            ExpanseMate
+            ExpenseMate
           </h1>
           <p className="text-on-surface font-medium tracking-wide text-sm mt-1">Smart Expense Tracker</p>
         </div>

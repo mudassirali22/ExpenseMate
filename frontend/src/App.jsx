@@ -48,7 +48,7 @@ const LoadingScreen = () => (
     <div className="flex flex-col items-center gap-4">
       <div className="w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin" />
       <div className="text-center">
-        <p className="text-sm font-black text-blue-100 tracking-widest uppercase mb-1">ExpanseMate</p>
+        <p className="text-sm font-black text-blue-100 tracking-widest uppercase mb-1">ExpenseMate</p>
         <p className="text-[10px] font-bold text-on-surface-variant uppercase tracking-widest">Initializing Dashboard</p>
       </div>
     </div>

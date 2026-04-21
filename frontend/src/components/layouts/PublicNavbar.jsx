@@ -14,7 +14,7 @@ const PublicNavbar = () => {
         <div className="w-8 h-8 sm:w-10 sm:h-10 rounded-lg sm:rounded-xl bg-primary flex items-center justify-center shadow-lg shadow-primary/20">
           <Wallet size={16} className="text-white sm:w-[20px] sm:h-[20px]" />
         </div>
-        <span className="text-xl sm:text-2xl font-black tracking-tightest text-primary">ExpanseMate</span>
+        <span className="text-xl sm:text-2xl font-black tracking-tightest text-primary">ExpenseMate</span>
       </Link>
 
       {isLanding && (

@@ -4,7 +4,7 @@ const { createNotification } = require("../utils/notificationHelper");
 // Create Goal
 exports.createGoal = async (req, res) => {
   try {
-    const { name, targetAmount, deadline } = req.body;
+    const { name, targetAmount, currentAmount, deadline } = req.body;
     
     if (!name || !targetAmount || !deadline) {
       return res.status(400).json({ message: "All fields are required" });
@@ -14,6 +14,7 @@ exports.createGoal = async (req, res) => {
       user: req.user.id,
       name,
       targetAmount,
+      currentAmount: Number(currentAmount) || 0,
       deadline,
     });
    

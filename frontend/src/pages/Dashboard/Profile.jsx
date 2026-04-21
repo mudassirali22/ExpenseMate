@@ -2,41 +2,25 @@ import React, { useState } from 'react';
 import { useAuth } from '../../context/AuthContext';
 import { toast } from 'react-hot-toast';
 import { User, Mail, Fingerprint, Calendar, Camera, ShieldCheck, Award, Zap } from 'lucide-react';
+import { useProfile } from '../../hooks/useProfile';
 const Profile = () => {
-  const { user, API, refreshUser } = useAuth();
+  const { user, refreshUser } = useAuth();
+  const { saving, updateProfile, uploadAvatar } = useProfile(refreshUser);
   const [fullName, setFullName] = useState(user?.fullName || '');
   const [email, setEmail] = useState(user?.email || '');
-  const [saving, setSaving] = useState(false);
 
   const handleUpdateProfile = async (e) => {
     if (e) e.preventDefault();
-    setSaving(true);
-    try {
-      const formData = new FormData();
-      formData.append('fullName', fullName);
-      formData.append('email', email);
-      const res = await fetch(`${API}/api/v1/auth/profile`, {
-        method: 'PUT', credentials: 'include', body: formData,
-      });
-      if (!res.ok) throw new Error('Update failed');
-      toast.success('Identity updated!'); refreshUser();
-    } catch (err) { toast.error(err.message); }
-    finally { setSaving(false); }
+    const formData = new FormData();
+    formData.append('fullName', fullName);
+    formData.append('email', email);
+    await updateProfile(formData);
   };
 
   const handleImageChange = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
-    const formData = new FormData();
-    formData.append('image', file);
-    formData.append('fullName', user.fullName);
-    try {
-      const res = await fetch(`${API}/api/v1/auth/profile`, {
-        method: 'PUT', credentials: 'include', body: formData,
-      });
-      if (!res.ok) throw new Error('Upload failed');
-      toast.success('Photo updated!'); refreshUser();
-    } catch (err) { toast.error(err.message); }
+    await uploadAvatar(file, user.fullName);
   };
 
   return (
@@ -169,7 +153,7 @@ const Profile = () => {
             <Award className="text-primary mx-auto mb-3" size={32} />
             <p className="text-[10px] font-bold text-primary uppercase tracking-[0.2em] mb-1">Membership Badge</p>
             <p className="text-xs text-on-surface-variant italic font-medium opacity-80 leading-relaxed">
-              "You are a verified free member of ExpanseMate."
+              "You are a verified free member of ExpenseMate."
             </p>
           </div>
         </div>

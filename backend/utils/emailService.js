@@ -12,7 +12,7 @@ const sendEmail = async (options) => {
   });
 
   const mailOptions = {
-    from: `${process.env.FROM_NAME || "ExpanseMate Support"} <${process.env.FROM_EMAIL || process.env.EMAIL_USER}>`,
+    from: `${process.env.FROM_NAME || "ExpenseMate Support"} <${process.env.FROM_EMAIL || process.env.EMAIL_USER}>`,
     to: options.email,
     subject: options.subject,
     text: options.message,

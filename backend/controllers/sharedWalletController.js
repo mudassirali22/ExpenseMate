@@ -125,7 +125,7 @@ exports.addMember = async (req, res) => {
       await sendEmail({
         email,
         subject: `🤝 Collaboration Invite: ${wallet.name}`,
-        message: `You've been invited to ${wallet.name} on ExpanseMate. Login: ${loginUrl}`,
+        message: `You've been invited to ${wallet.name} on ExpenseMate. Login: ${loginUrl}`,
         html: htmlContent
       });
     } catch (emailError) {

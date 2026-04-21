@@ -331,7 +331,7 @@ const Transactions = () => {
 
                 const res = await fetch(endpoint, { method: 'DELETE', credentials: 'include' });
                 if (res.ok) {
-                  toast.success('Transaction removed');
+                  toast.success('Transaction removed', { id: 'del-succ-trans', duration: 3000 });
                   fetchAll();
                 } else {
                   toast.error('Deletion failed');
@@ -413,6 +413,9 @@ const Transactions = () => {
     Investment: allActivities.filter(i => i.type === 'portfolio').length,
   }), [allActivities]);
 
+  // Mobile date range toggle
+  const [showMobileDateRange, setShowMobileDateRange] = useState(false);
+
   if (loading && allActivities.length === 0) {
     return (
       <div className="page-container flex items-center justify-center min-h-[60vh]">
@@ -423,7 +426,9 @@ const Transactions = () => {
 
   return (
     <div className="page-container animate-fade-in-up pb-10">
-      <div className="page-header flex flex-col md:flex-row justify-between items-start md:items-end gap-6 mb-8">
+
+      {/*Page Header */}
+      <div className="page-header flex flex-col md:flex-row justify-between items-start md:items-end gap-4 mb-6">
         <div>
           <div className="flex items-center gap-2 mb-1">
             <Activity size={14} className="text-secondary" />
@@ -442,8 +447,99 @@ const Transactions = () => {
         </div>
       </div>
 
+      {/* MOBILE FILTER BAR*/}
+      <div className="lg:hidden mb-4 space-y-3">
+        {/* Search */}
+        <div className="relative">
+          <Search size={14} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-on-surface-variant opacity-50" />
+          <input
+            type="text"
+            placeholder="Search title, category, amount…"
+            value={searchQuery}
+            onChange={e => { setSearchQuery(e.target.value); setCurrentPage(1); }}
+            className="w-full bg-surface-lowest border border-glass-border rounded-2xl pl-10 pr-4 py-3 text-[13px] text-on-surface focus:outline-none focus:border-primary/40 transition-colors placeholder:text-on-surface-variant/40"
+          />
+          {searchQuery && (
+            <button onClick={() => { setSearchQuery(''); setCurrentPage(1); }} className="absolute right-3 top-1/2 -translate-y-1/2 p-1 rounded-lg hover:bg-surface-container">
+              <X size={13} className="text-on-surface-variant" />
+            </button>
+          )}
+        </div>
+
+        {/* Type dropdown + date toggle row */}
+        <div className="flex items-center gap-2">
+          <div className="relative flex-1">
+            <Filter size={13} className="absolute left-3 top-1/2 -translate-y-1/2 text-on-surface-variant opacity-60 pointer-events-none" />
+            <select
+              value={activeTab}
+              onChange={e => { setActiveTab(e.target.value); setCurrentPage(1); }}
+              className="w-full appearance-none bg-surface-lowest border border-glass-border rounded-2xl pl-9 pr-8 py-3 text-[12px] font-black uppercase tracking-wider text-on-surface focus:outline-none focus:border-primary/40 transition-colors cursor-pointer"
+              style={{ backgroundColor: 'var(--color-surface-lowest)', color: 'var(--color-on-surface)' }}
+            >
+              {['All', 'Income', 'Expense', 'Tax', 'Investment'].map(tab => (
+                <option key={tab} value={tab} style={{ backgroundColor: 'var(--color-surface-lowest)', color: 'var(--color-on-surface)' }}>
+                  {tab} ({counts[tab]})
+                </option>
+              ))}
+            </select>
+            <ChevronDown size={13} className="absolute right-3 top-1/2 -translate-y-1/2 text-on-surface-variant opacity-60 pointer-events-none" />
+          </div>
+          {/* Date range toggle */}
+          <button
+            onClick={() => setShowMobileDateRange(v => !v)}
+            className={`shrink-0 w-12 h-12 flex items-center justify-center rounded-2xl border transition-all ${
+              showMobileDateRange || dateFrom || dateTo
+                ? 'bg-primary/10 border-primary/30 text-primary'
+                : 'bg-surface-container border-glass-border text-on-surface-variant'
+            }`}
+          >
+            <Calendar size={16} />
+          </button>
+        </div>
+
+        {/* Collapsible date range */}
+        <AnimatePresence>
+          {showMobileDateRange && (
+            <motion.div
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: 'auto' }}
+              exit={{ opacity: 0, height: 0 }}
+              className="overflow-hidden"
+            >
+              <div className="grid grid-cols-2 gap-2 pt-1">
+                <div>
+                  <label className="text-[9px] font-bold uppercase tracking-wider text-on-surface-variant opacity-60 mb-1 block">From</label>
+                  <input type="date" value={dateFrom} onChange={e => { setDateFrom(e.target.value); setCurrentPage(1); }}
+                    className="w-full bg-surface-lowest border border-glass-border rounded-xl px-3 py-2 text-[12px] text-on-surface focus:outline-none focus:border-primary/40 transition-colors" />
+                </div>
+                <div>
+                  <label className="text-[9px] font-bold uppercase tracking-wider text-on-surface-variant opacity-60 mb-1 block">To</label>
+                  <input type="date" value={dateTo} onChange={e => { setDateTo(e.target.value); setCurrentPage(1); }}
+                    className="w-full bg-surface-lowest border border-glass-border rounded-xl px-3 py-2 text-[12px] text-on-surface focus:outline-none focus:border-primary/40 transition-colors" />
+                </div>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* Result count + reset */}
+        <div className="flex items-center justify-between">
+          <p className="text-[11px] font-bold text-on-surface-variant">
+            <span className="text-primary font-black">{filteredActivities.length}</span> results
+          </p>
+          {hasFilters && (
+            <button onClick={resetFilters} className="text-[10px] font-bold text-error flex items-center gap-1 opacity-70 hover:opacity-100 transition-all">
+              <X size={11} /> Clear filters
+            </button>
+          )}
+        </div>
+      </div>
+
+      {/*DESKTOP LAYOUT */}
       <div className="flex flex-col lg:flex-row-reverse gap-6 items-start">
-        <div className="w-full lg:w-56 xl:w-60 shrink-0 space-y-4 lg:sticky lg:top-6">
+
+        {/* Desktop Sidebar*/}
+        <div className="hidden lg:block w-56 xl:w-60 shrink-0 space-y-4 sticky top-6">
 
           {/* Search */}
           <div className="stat-card !p-4">
@@ -470,16 +566,14 @@ const Transactions = () => {
                   className={`relative w-full flex items-center justify-between px-3 py-2 rounded-xl text-[12px] font-semibold transition-all z-10 ${activeTab === tab
                     ? 'text-primary'
                     : 'text-on-surface-variant hover:bg-surface-low hover:text-on-surface'}`}>
-
                   {/* Smooth Background Transition */}
                   {activeTab === tab && (
                     <motion.div
                       layoutId="transactions-type-filter"
                       className="absolute inset-0 bg-primary/10 border border-primary/20 rounded-xl -z-10"
-                      transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
+                      transition={{ type: 'spring', bounce: 0.2, duration: 0.6 }}
                     />
                   )}
-
                   <span className="relative z-10">{tab}</span>
                   <span className={`relative z-10 text-[10px] font-black px-1.5 py-0.5 rounded-md ${activeTab === tab ? 'bg-primary/20 text-primary' : 'bg-surface-container text-on-surface-variant opacity-70'}`}>
                     {counts[tab]}
@@ -523,18 +617,18 @@ const Transactions = () => {
           </div>
         </div>
 
-        {/* LEFT CONTENT (on Desktop) */}
-        <div className="flex-1 min-w-0 space-y-2">
+        {/*Transaction List*/}
+        <div className="flex-1 min-w-0 w-full space-y-2">
 
           {/* Column headers */}
-          <div className="hidden sm:grid grid-cols-[2fr_1fr_1fr_1fr] gap-4 px-4 py-2">
+          <div className="hidden lg:grid grid-cols-[2fr_1fr_1fr_1fr] gap-4 px-4 py-2">
             {['Description', 'Category', 'Date', 'Amount'].map(h => (
               <p key={h} className="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant opacity-50">{h}</p>
             ))}
           </div>
 
-          {/* Transaction rows  (ANIMATED) */}
-          <div className="space-y-3 relative">
+          {/* Transaction rows */}
+          <div className="space-y-2 lg:space-y-3 relative">
             <AnimatePresence mode="popLayout">
               {paginatedActivities.length === 0 ? (
                 <motion.div
@@ -554,6 +648,7 @@ const Transactions = () => {
               ) : paginatedActivities.map(item => {
                 const isPositive = item.type === 'income' || item.type === 'portfolio';
                 const colorKey = getTypeColorKey(item);
+                const isEditableType = (item.displayType === 'Income' || item.displayType === 'Expense');
 
                 const handleRowClick = () => {
                   if (item.displayType === 'Shared') return navigate('/shared-wallets');
@@ -562,51 +657,39 @@ const Transactions = () => {
                   if (item.type === 'portfolio') return navigate('/portfolio');
                 };
 
+                //Inline edit form 
                 if (editingId === item._id) {
                   const categories = item.type === 'expense' ? EXPENSE_CATEGORIES : INCOME_CATEGORIES;
                   return (
                     <motion.div key={item._id} layout initial={{ opacity: 0 }} animate={{ opacity: 1 }}
-                      className="flex flex-col sm:grid sm:grid-cols-[2fr_1fr_1fr_1fr] gap-3 items-center px-4 py-3 rounded-xl border border-primary/30 bg-primary/5 shadow-inner">
-                      
-                      <div className="w-full sm:w-auto">
-                        <input type="text" value={editFormData.title} onChange={e => setEditFormData({ ...editFormData, title: e.target.value })}
-                          className="w-full bg-surface-lowest border border-glass-border rounded-lg px-2 py-1.5 text-[13px] text-on-surface focus:outline-none focus:border-primary/50" placeholder="Description" />
-                      </div>
+                      className="flex flex-col gap-3 px-4 py-3 rounded-2xl border border-primary/30 bg-primary/5 shadow-inner">
 
-                      <div className="w-full sm:w-auto">
+                      <input type="text" value={editFormData.title} onChange={e => setEditFormData({ ...editFormData, title: e.target.value })}
+                        className="w-full bg-surface-lowest border border-glass-border rounded-xl px-3 py-2 text-[13px] text-on-surface focus:outline-none focus:border-primary/50" placeholder="Description" />
+
+                      <div className="grid grid-cols-2 gap-2">
                         <select value={editFormData.category} onChange={e => setEditFormData({ ...editFormData, category: e.target.value })}
-                          className="w-full bg-surface-lowest border border-glass-border rounded-lg px-2 py-1.5 text-[12px] text-on-surface focus:outline-none focus:border-primary/50 appearance-none">
+                          className="bg-surface-lowest border border-glass-border rounded-xl px-3 py-2 text-[12px] text-on-surface focus:outline-none focus:border-primary/50 appearance-none">
                           {categories.map(cat => <option key={cat.id} value={cat.id}>{cat.id}</option>)}
                         </select>
+                        <input type="date" value={editFormData.date} onChange={e => setEditFormData({ ...editFormData, date: e.target.value })}
+                          className="bg-surface-lowest border border-glass-border rounded-xl px-3 py-2 text-[12px] text-on-surface focus:outline-none focus:border-primary/50" />
                       </div>
 
-                      <div className="w-full sm:w-auto">
-                         <input type="date" value={editFormData.date} onChange={e => setEditFormData({ ...editFormData, date: e.target.value })}
-                          className="w-full bg-surface-lowest border border-glass-border rounded-lg px-2 py-1 text-[11px] text-on-surface focus:outline-none focus:border-primary/50" />
-                      </div>
-
-                      <div className="flex flex-col gap-2 w-full sm:col-span-1">
-                        <textarea rows={1} value={editFormData.notes} onChange={e => setEditFormData({ ...editFormData, notes: e.target.value })}
-                          className="w-full bg-surface-lowest border border-glass-border rounded-lg px-2 py-1.5 text-[11px] text-on-surface focus:outline-none focus:border-primary/50 resize-none" placeholder="Notes (optional)" />
-                      </div>
-
-                      <div className="flex items-center justify-between sm:justify-end w-full sm:w-auto gap-2">
-                        <div className="relative">
-                          <span className="absolute left-1 top-1/2 -translate-y-1/2 text-[10px] opacity-50 font-bold">{currencySymbol}</span>
+                      <div className="flex items-center gap-2">
+                        <div className="relative flex-1">
+                          <span className="absolute left-3 top-1/2 -translate-y-1/2 text-[11px] opacity-50 font-bold">{currencySymbol}</span>
                           <input type="number" value={editFormData.amount} onChange={e => setEditFormData({ ...editFormData, amount: e.target.value })}
-                            className="w-20 bg-surface-lowest border border-glass-border rounded-lg pl-5 pr-2 py-1.5 text-[13px] font-bold text-on-surface focus:outline-none focus:border-primary/50" />
+                            className="w-full bg-surface-lowest border border-glass-border rounded-xl pl-7 pr-3 py-2 text-[13px] font-bold text-on-surface focus:outline-none focus:border-primary/50" />
                         </div>
-                        
-                        <div className="flex items-center gap-1">
-                          <button onClick={() => handleInlineSave(item)} disabled={isSavingInline} title="Save Changes"
-                            className="p-1.5 rounded-lg bg-success/10 text-success hover:bg-success/20 transition-colors border border-success/20">
-                            {isSavingInline ? <div className="w-4 h-4 border-2 border-success border-t-transparent rounded-full animate-spin" /> : <CheckCircle2 size={14} />}
-                          </button>
-                          <button onClick={cancelInlineEdit} title="Cancel"
-                            className="p-1.5 rounded-lg bg-error/10 text-error hover:bg-error/20 transition-colors border border-error/20">
-                            <X size={14} />
-                          </button>
-                        </div>
+                        <button onClick={() => handleInlineSave(item)} disabled={isSavingInline}
+                          className="p-2.5 rounded-xl bg-success/10 text-success hover:bg-success/20 transition-colors border border-success/20">
+                          {isSavingInline ? <div className="w-4 h-4 border-2 border-success border-t-transparent rounded-full animate-spin" /> : <CheckCircle2 size={16} />}
+                        </button>
+                        <button onClick={cancelInlineEdit}
+                          className="p-2.5 rounded-xl bg-error/10 text-error hover:bg-error/20 transition-colors border border-error/20">
+                          <X size={16} />
+                        </button>
                       </div>
                     </motion.div>
                   );
@@ -620,67 +703,94 @@ const Transactions = () => {
                     exit={{ opacity: 0, scale: 0.95, y: -10 }}
                     transition={{ duration: 0.25 }}
                     onClick={handleRowClick}
-                    className="group flex flex-col sm:grid sm:grid-cols-[2fr_1fr_1fr_1fr] gap-4 items-center px-4 py-3.5 rounded-xl border border-transparent hover:border-glass-border hover:bg-surface-lowest transition-all cursor-pointer bg-surface-lowest/60">
-
-                    {/* Name + type */}
-                    <div className="flex items-center gap-3 w-full sm:w-auto">
-                      <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${TYPE_COLORS[colorKey]}`}>
+                    className="group cursor-pointer"
+                  >
+                    {/*MOBILE card*/}
+                    <div className="lg:hidden flex items-center gap-3 px-3 py-3 rounded-2xl bg-surface-lowest/70 border border-glass-border hover:border-primary/20 hover:bg-surface-lowest transition-all">
+                      {/* Icon */}
+                      <div className={`w-10 h-10 rounded-2xl flex items-center justify-center shrink-0 ${TYPE_COLORS[colorKey]}`}>
                         {getTypeIcon(item)}
                       </div>
-                      <div className="min-w-0">
-                        <p className="text-[13px] font-semibold text-on-surface truncate leading-tight">{item.title}</p>
-                        <div className="flex items-center gap-1.5">
-                          <span className="text-[9px] font-bold uppercase tracking-widest opacity-60 bg-surface-container px-1.5 py-0.5 rounded text-on-surface-variant">
-                            {item.displayType || item.type}
-                          </span>
-                          {item.notes && (
-                            <span className="text-[9px] font-medium text-on-surface-variant opacity-50 truncate max-w-[100px]">
-                              • {item.notes}
-                            </span>
-                          )}
-                        </div>
-                      </div>
-                    </div>
 
-                    {/* Category */}
-                    <p className="hidden sm:block text-[12px] font-medium text-on-surface-variant truncate">
-                      {item.category || item.source || 'General'}
-                    </p>
-
-                    {/* Date */}
-                    <p className="hidden sm:block text-[11px] font-medium text-on-surface-variant opacity-70">
-                      {new Date(item.date || item.createdAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}
-                    </p>
-
-                    {/* Amount */}
-                    <div className="flex items-center justify-between sm:justify-end w-full sm:w-auto gap-3">
-                      <div className="text-right">
-                        <p className={`text-[13px] font-bold tracking-tight ${isPositive ? 'text-success' : 'text-error'}`}>
-                          {isPositive ? '+' : '-'}{currencySymbol} {item.amount?.toLocaleString(undefined, { maximumFractionDigits: 0 })}
+                      {/* Title + meta */}
+                      <div className="min-w-0 flex-1">
+                        <p className="text-[13px] font-semibold text-on-surface truncate leading-snug">{item.title}</p>
+                        <p className="text-[10px] text-on-surface-variant opacity-60 mt-0.5">
+                          <span className="font-bold uppercase tracking-wider">{item.category || item.source || item.displayType || item.type}</span>
+                          <span className="mx-1 opacity-40">·</span>
+                          {new Date(item.date || item.createdAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
                         </p>
                       </div>
 
-                      {/* Standard Actions */}
-                      {((!item.displayType || item.displayType === 'manual' || item.displayType === 'Income' || item.displayType === 'Expense')) && (item.type === 'income' || item.type === 'expense') ? (
-                        <div className="flex items-center gap-1 transition-opacity">
-                          <button
-                            onClick={(e) => { e.stopPropagation(); startInlineEdit(item); }}
-                            className="p-1.5 rounded-lg bg-primary/5 hover:bg-primary/10 text-primary transition-colors border border-primary/20"
-                            title="Edit Transaction"
-                          >
-                            <Pencil size={13} />
-                          </button>
-                          <button
-                            onClick={(e) => { e.stopPropagation(); confirmDelete(item); }}
-                            className="p-1.5 rounded-lg bg-error/5 hover:bg-error/10 text-error transition-colors border border-error/20"
-                            title="Delete Transaction"
-                          >
-                            <Trash2 size={13} />
-                          </button>
+                      {/* Amount + actions */}
+                      <div className="flex items-center gap-2 shrink-0">
+                        <p className={`text-[13px] font-black tracking-tight ${isPositive ? 'text-success' : 'text-error'}`}>
+                          {isPositive ? '+' : '-'}{currencySymbol} {item.amount?.toLocaleString(undefined, { maximumFractionDigits: 0 })}
+                        </p>
+                        {isEditableType ? (
+                          <div className="flex gap-1">
+                            <button onClick={e => { e.stopPropagation(); startInlineEdit(item); }}
+                              className="w-7 h-7 flex items-center justify-center rounded-lg bg-primary/8 text-primary border border-primary/15 hover:bg-primary/15 transition-colors">
+                              <Pencil size={11} />
+                            </button>
+                            <button onClick={e => { e.stopPropagation(); confirmDelete(item); }}
+                              className="w-7 h-7 flex items-center justify-center rounded-lg bg-error/8 text-error border border-error/15 hover:bg-error/15 transition-colors">
+                              <Trash2 size={11} />
+                            </button>
+                          </div>
+                        ) : (
+                          <ArrowUpRight size={12} className="text-on-surface-variant opacity-30" />
+                        )}
+                      </div>
+                    </div>
+
+                    {/* ── DESKTOP row (hidden below lg) — unchanged ── */}
+                    <div className="hidden lg:grid grid-cols-[2fr_1fr_1fr_auto] gap-4 items-center px-4 py-3.5 rounded-xl border border-transparent hover:border-glass-border hover:bg-surface-lowest transition-all bg-surface-lowest/60">
+                      {/* Name + type */}
+                      <div className="flex items-center gap-3">
+                        <div className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 ${TYPE_COLORS[colorKey]}`}>
+                          {getTypeIcon(item)}
                         </div>
-                      ) : (
-                        <ArrowUpRight size={13} className="text-on-surface-variant opacity-40 group-hover:opacity-70 transition-opacity" />
-                      )}
+                        <div className="min-w-0">
+                          <p className="text-[13px] font-semibold text-on-surface truncate leading-tight">{item.title}</p>
+                          <div className="flex items-center gap-1.5">
+                            <span className="text-[9px] font-bold uppercase tracking-widest opacity-60 bg-surface-container px-1.5 py-0.5 rounded text-on-surface-variant">
+                              {item.displayType || item.type}
+                            </span>
+                            {item.notes && (
+                              <span className="text-[9px] font-medium text-on-surface-variant opacity-50 truncate max-w-[100px]">• {item.notes}</span>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                      {/* Category */}
+                      <p className="text-[12px] font-medium text-on-surface-variant truncate">
+                        {item.category || item.source || 'General'}
+                      </p>
+                      {/* Date */}
+                      <p className="text-[11px] font-medium text-on-surface-variant opacity-70">
+                        {new Date(item.date || item.createdAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}
+                      </p>
+                      {/* Amount + actions */}
+                      <div className="flex items-center justify-end gap-3">
+                        <p className={`text-[13px] font-bold tracking-tight ${isPositive ? 'text-success' : 'text-error'}`}>
+                          {isPositive ? '+' : '-'}{currencySymbol} {item.amount?.toLocaleString(undefined, { maximumFractionDigits: 0 })}
+                        </p>
+                        {isEditableType ? (
+                          <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                            <button onClick={e => { e.stopPropagation(); startInlineEdit(item); }}
+                              className="p-1.5 rounded-lg bg-primary/5 hover:bg-primary/10 text-primary transition-colors border border-primary/20" title="Edit">
+                              <Pencil size={13} />
+                            </button>
+                            <button onClick={e => { e.stopPropagation(); confirmDelete(item); }}
+                              className="p-1.5 rounded-lg bg-error/5 hover:bg-error/10 text-error transition-colors border border-error/20" title="Delete">
+                              <Trash2 size={13} />
+                            </button>
+                          </div>
+                        ) : (
+                          <ArrowUpRight size={13} className="text-on-surface-variant opacity-40 group-hover:opacity-70 transition-opacity" />
+                        )}
+                      </div>
                     </div>
                   </motion.div>
                 );
@@ -731,9 +841,7 @@ const Transactions = () => {
         onRefresh={fetchAll} API={API} currencySymbol={currencySymbol}
         initialData={selectedTransaction}
       />
-
     </div>
   );
 };
-
 export default Transactions;

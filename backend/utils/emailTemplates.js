@@ -1,8 +1,8 @@
-const getBaseTemplate = (content, title = "ExpanseMate") => `
+const getBaseTemplate = (content, title = "ExpenseMate") => `
   <div style="font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 600px; margin: auto; padding: 40px 20px; background-color: #fcfcfc;">
     <div style="background-color: #ffffff; border-radius: 24px; padding: 40px; border: 1px solid #f0f0f0; box-shadow: 0 4px 20px rgba(0,0,0,0.03);">
       <div style="text-align: center; margin-bottom: 30px;">
-        <h2 style="color: #6366f1; font-size: 28px; font-weight: 900; letter-spacing: -1.5px; margin: 0; italic;">ExpanseMate</h2>
+        <h2 style="color: #6366f1; font-size: 28px; font-weight: 900; letter-spacing: -1.5px; margin: 0; italic;">ExpenseMate</h2>
         <p style="color: #64748b; font-size: 10px; font-weight: 700; text-transform: uppercase; tracking: 2px; margin-top: 5px;">Smart Expense Management</p>
       </div>
       <hr style="border: none; border-top: 1px solid #f1f5f9; margin: 30px 0;">
@@ -12,7 +12,7 @@ const getBaseTemplate = (content, title = "ExpanseMate") => `
       <hr style="border: none; border-top: 1px solid #f1f5f9; margin: 30px 0;">
       <p style="font-size: 11px; color: #94a3b8; text-align: center; line-height: 1.6;">
         If you have any questions, reply to this email or visit our support portal.<br>
-        &copy; ${new Date().getFullYear()} ExpanseMate. All rights reserved.
+        &copy; ${new Date().getFullYear()} ExpenseMate. All rights reserved.
       </p>
     </div>
   </div>

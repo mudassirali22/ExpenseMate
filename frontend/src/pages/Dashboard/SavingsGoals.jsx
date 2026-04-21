@@ -251,7 +251,7 @@ const SavingsGoals = () => {
               toast.dismiss(t.id);
               try {
                 await fetch(`${API}/api/v1/goals/${id}`, { method: 'DELETE', credentials: 'include' });
-                toast.success('Goal removed');
+                toast.success('Goal removed', { id: 'del-succ-goal', duration: 3000 });
                 fetchGoals();
               } catch (err) {
                 toast.error('Deletion failed');

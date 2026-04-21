@@ -53,9 +53,6 @@ const Notes = () => {
   const [remAmount, setRemAmount] = useState('');
   const [remDescription, setRemDescription] = useState('');
 
-  // Notification
-  const [dueReminder, setDueReminder] = useState(null);
-
   // Inline Editing States
   const [editingId, setEditingId] = useState(null);
   const [editFormData, setEditFormData] = useState({
@@ -75,34 +72,32 @@ const Notes = () => {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  // Poll for due reminders every 30 seconds
+  // Poll for due reminders every 60 seconds → push to notification bell (non-blocking)
   useEffect(() => {
-    const checkDue = async () => {
-      try {
-        const res = await fetch(`${API}/api/v1/reminders/due`, { credentials: 'include' });
-        if (res.ok) {
-          const data = await res.json();
-          if (data.length > 0 && !dueReminder) {
-            setDueReminder(data[0]);
-          }
-        }
-      } catch { }
+    const checkDue = () => {
+      fetch(`${API}/api/v1/reminders/due`, { credentials: 'include' })
+        .then(res => res.ok ? res.json() : [])
+        .then(data => {
+          if (!Array.isArray(data) || data.length === 0) return;
+          const tasks = data.flatMap(reminder => [
+            fetch(`${API}/api/v1/notifications/create`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              credentials: 'include',
+              body: JSON.stringify({ message: `Reminder Due: ${reminder.text}`, type: 'REMINDER', link: '/notes' })
+            }).catch(() => {}),
+            fetch(`${API}/api/v1/reminders/notified/${reminder._id}`, {
+              method: 'PUT', credentials: 'include'
+            }).catch(() => {})
+          ]);
+          Promise.allSettled(tasks).catch(() => {});
+        })
+        .catch(() => {});
     };
     checkDue();
-    const interval = setInterval(checkDue, 30000);
+    const interval = setInterval(checkDue, 60000);
     return () => clearInterval(interval);
-  }, [API, dueReminder]);
-
-  const dismissReminder = async () => {
-    if (dueReminder) {
-      try {
-        await fetch(`${API}/api/v1/reminders/notified/${dueReminder._id}`, {
-          method: 'PUT', credentials: 'include'
-        });
-      } catch { }
-      setDueReminder(null);
-    }
-  };
+  }, [API]);
 
   const fetchNotes = async () => {
     try {
@@ -174,7 +169,7 @@ const Notes = () => {
                 const endpoint = type === 'note' ? `/api/v1/notes/delete/${id}` : `/api/v1/reminders/delete/${id}`;
                 const res = await fetch(`${API}${endpoint}`, { method: 'DELETE', credentials: 'include' });
                 if (res.ok) {
-                  toast.success('Deleted');
+                  toast.success('Deleted', { id: 'del-succ-note', duration: 3000 });
                   if (type === 'note') fetchNotes();
                   else fetchReminders();
                 }
@@ -311,27 +306,6 @@ const Notes = () => {
   return (
     <div className="page-container animate-fade-in-up pb-10">
 
-      {/* Due Reminder Notification */}
-      {dueReminder && (
-        <div className="fixed top-4 right-4 z-[200] max-w-sm animate-fade-in">
-          <div className="stat-card !p-4 border-l-4 border-l-error shadow-2xl">
-            <div className="flex items-start gap-3">
-              <div className="w-10 h-10 rounded-xl bg-error/10 text-error flex items-center justify-center shrink-0">
-                <BellRing size={20} />
-              </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-xs font-bold text-error uppercase tracking-wider mb-1">Reminder Due!</p>
-                <p className="text-sm font-bold text-on-surface truncate">{dueReminder.text}</p>
-                {dueReminder.amount && <p className="text-xs text-on-surface-variant">{currencySymbol} {dueReminder.amount.toLocaleString()}</p>}
-              </div>
-              <button onClick={dismissReminder} className="p-1.5 rounded-lg hover:bg-surface-container text-on-surface-variant">
-                <Plus size={14} className="rotate-45" />
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
-
       {/* Header */}
       <div className="page-header flex flex-col sm:flex-row justify-between items-start sm:items-end gap-4">
         <div>
@@ -447,15 +421,15 @@ const Notes = () => {
                     {!isEditing && (
                       <div className="flex gap-1 shrink-0">
                         <button onClick={() => togglePin(note._id, note.isPinned)}
-                          className={`p-1.5 rounded-lg transition-all ${note.isPinned ? 'text-primary bg-primary/10' : 'text-on-surface-variant opacity-0 group-hover:opacity-100 hover:bg-surface-container'}`}>
+                          className={`p-1.5 rounded-lg transition-all ${note.isPinned ? 'text-primary bg-primary/10' : 'text-on-surface-variant opacity-100 lg:opacity-0 lg:group-hover:opacity-100 hover:bg-surface-container'}`}>
                           <Pin size={13} fill={note.isPinned ? 'currentColor' : 'none'} />
                         </button>
                         <button onClick={() => startInlineEdit(note, 'note')}
-                          className="p-1.5 text-primary rounded-lg hover:bg-primary/10 transition-all opacity-0 group-hover:opacity-100">
+                          className="p-1.5 text-primary rounded-lg hover:bg-primary/10 transition-all opacity-100 lg:opacity-0 lg:group-hover:opacity-100">
                           <Pencil size={13} />
                         </button>
                         <button onClick={() => confirmDelete('note', note._id)}
-                          className="p-1.5 text-error rounded-lg hover:bg-error/10 transition-all opacity-0 group-hover:opacity-100">
+                          className="p-1.5 text-error rounded-lg hover:bg-error/10 transition-all opacity-100 lg:opacity-0 lg:group-hover:opacity-100">
                           <Trash2 size={13} />
                         </button>
                       </div>
@@ -738,7 +712,7 @@ const Notes = () => {
                         </div>
                       </div>
                       {!isEditing && (
-                        <div className="flex gap-1 opacity-0 group-hover:opacity-100 transition-all">
+                        <div className="flex gap-1 opacity-100 lg:opacity-0 lg:group-hover:opacity-100 transition-all">
                           <button onClick={() => startInlineEdit(reminder, 'reminder')}
                             className="p-2 text-primary hover:bg-primary/10 transition-colors rounded-lg">
                             <Pencil size={14} />

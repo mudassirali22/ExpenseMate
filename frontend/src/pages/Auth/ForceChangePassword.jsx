@@ -82,7 +82,7 @@ const ForceChangePassword = () => {
                 {/* Brand Identity */}
                 <div className="text-center mb-10">
                     <h1 className="text-4xl font-extrabold tracking-tight bg-gradient-to-br from-primary via-primary-fixed to-primary-container bg-clip-text text-transparent inline-block mb-3 italic">
-                        ExpanseMate
+                        ExpenseMate
                     </h1>
                     <div className="flex items-center justify-center gap-2">
                         <span className="h-[1px] w-8 bg-primary/40" />

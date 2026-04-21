@@ -1,5 +1,22 @@
 const Notification = require("../models/Notification");
 
+// Create a notification (called from frontend for due reminders etc.)
+exports.createNotification = async (req, res) => {
+  try {
+    const { message, type, link } = req.body;
+    if (!message) return res.status(400).json({ message: "Message is required" });
+    const notification = await Notification.create({
+      recipient: req.user.id,
+      type: type || "ALERT",
+      message,
+      link: link || null,
+    });
+    res.status(201).json({ success: true, notification });
+  } catch (error) {
+    res.status(500).json({ message: "Error creating notification", error: error.message });
+  }
+};
+
 exports.getNotifications = async (req, res) => {
   try {
     const notifications = await Notification.find({ recipient: req.user.id })

@@ -58,7 +58,7 @@ const Sidebar = ({ isOpen, onClose }) => {
         {/* Brand/Logo Section */}
         <div className="px-5 mb-6 flex items-center justify-between">
           <div className="group cursor-pointer">
-            <h1 className="text-[1.1rem] font-[900] text-on-surface tracking-tightest group-hover:text-primary transition-colors">ExpanseMate</h1>
+            <h1 className="text-[1.1rem] font-[900] text-on-surface tracking-tightest group-hover:text-primary transition-colors">ExpenseMate</h1>
             <p className="text-[9px] uppercase tracking-[0.3em] text-primary/60 mt-0.5 font-black">Control Panel</p>
           </div>
           <button onClick={onClose} className="lg:hidden p-2 rounded-lg hover:bg-surface-low text-on-surface-variant hover:text-on-surface transition-all">

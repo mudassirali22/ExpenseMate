@@ -42,7 +42,7 @@ const ResetPassword = () => {
       <main className="w-full max-w-md z-10">
         <div className="mb-10 text-center">
           <h1 className="text-3xl font-black tracking-tighter bg-gradient-to-br from-primary to-primary-container bg-clip-text text-transparent">
-            ExpanseMate
+            ExpenseMate
           </h1>
         </div>
 

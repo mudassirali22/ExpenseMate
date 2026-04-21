@@ -408,6 +408,18 @@
         box-shadow: 0 0 0 3px rgba(129, 140, 248, 0.15);
     }
 
+    /* Fix native select/option bg in dark mode */
+    select.input-field,
+    select.input-field option {
+        background-color: var(--surface-lowest);
+        color: var(--on-surface);
+    }
+
+    select option {
+        background-color: var(--surface-lowest);
+        color: var(--on-surface);
+    }
+
     .input-label {
         display: block;
         font-size: 0.75rem;

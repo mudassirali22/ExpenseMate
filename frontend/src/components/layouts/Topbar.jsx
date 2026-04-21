@@ -92,7 +92,7 @@ const Topbar = ({ onMenuClick, isSidebarOpen }) => {
   };
 
   return (
-    <header className="sticky top-0 z-40 flex justify-between items-center w-full px-4 sm:px-6 py-3 bg-glass-surface backdrop-blur-xl border-b border-glass-border font-['Inter'] tracking-tight transition-colors duration-300">
+    <header ref={dropdownRef} className="sticky top-0 z-40 flex justify-between items-center w-full px-4 sm:px-6 py-3 bg-glass-surface backdrop-blur-xl border-b border-glass-border font-['Inter'] tracking-tight transition-colors duration-300">
 
       {/* Left — Mobile hamburger & Brand */}
       <div className="flex items-center gap-3 sm:gap-6">
@@ -103,7 +103,90 @@ const Topbar = ({ onMenuClick, isSidebarOpen }) => {
         >
           {isSidebarOpen ? <X size={20} /> : <Menu size={20} />}
         </button>
-        <h1 className="lg:hidden text-[1.1rem] font-[900] text-on-surface tracking-tightest">ExpanseMate</h1>
+        <h1 className="lg:hidden text-[1.1rem] font-[900] text-on-surface tracking-tightest">ExpenseMate</h1>
+      </div>
+
+      {/* Mobile-only: Notification bell + profile avatar */}
+      <div className="flex lg:hidden items-center gap-2">
+        {/* Notification bell (mobile) */}
+        <button
+          onClick={() => setShowNotifications(!showNotifications)}
+          className={`w-10 h-10 flex items-center justify-center rounded-xl transition-all duration-300 active:scale-95 relative ${showNotifications ? 'bg-primary/10 text-primary' : 'text-on-surface-variant hover:bg-surface-low'}`}
+          aria-label="Notifications"
+        >
+          <Bell size={20} />
+          {unreadCount > 0 && (
+            <span className="absolute top-2.5 right-2.5 w-3.5 h-3.5 rounded-full bg-primary border-2 border-surface text-[7px] font-black text-white flex items-center justify-center">
+              {unreadCount > 9 ? '9+' : unreadCount}
+            </span>
+          )}
+        </button>
+
+        {/* Notification dropdown (mobile) */}
+        <AnimatePresence>
+          {showNotifications && (
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95, y: 10 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.95, y: 10 }}
+              className="absolute right-2 top-14 w-[calc(100vw-1rem)] max-w-[360px] bg-surface-container-high border border-glass-border rounded-3xl shadow-[0_20px_60px_-15px_rgba(0,0,0,0.5)] overflow-hidden z-[100]"
+            >
+              <div className="p-4 border-b border-glass-border flex justify-between items-center bg-surface-container-highest">
+                <h3 className="text-xs font-black text-on-surface uppercase tracking-[0.2em]">Notifications</h3>
+                {unreadCount > 0 && (
+                  <button onClick={() => handleMarkRead('all')} className="text-[10px] font-bold text-primary hover:underline transition-all">Mark all as read</button>
+                )}
+              </div>
+              <div className="max-h-[55vh] overflow-y-auto custom-scrollbar">
+                {notifications.length > 0 ? (
+                  notifications.map((n) => (
+                    <div
+                      key={n._id}
+                      onClick={() => handleMarkRead(n._id, n.link)}
+                      className={`p-4 border-b border-glass-border last:border-0 hover:bg-surface-lowest/50 transition-colors cursor-pointer relative ${!n.isRead ? 'bg-primary/[0.02]' : 'opacity-60'}`}
+                    >
+                      {!n.isRead && <div className="absolute left-0 top-0 bottom-0 w-1 bg-primary" />}
+                      <div className="flex gap-3">
+                        <div className={`w-9 h-9 rounded-2xl flex items-center justify-center border border-glass-border shrink-0 ${!n.isRead ? 'bg-surface-lowest shadow-sm' : 'bg-surface-container'}`}>
+                          {getIcon(n.type, n.message)}
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <p className="text-[11px] font-bold text-on-surface leading-snug mb-1">{n.message}</p>
+                          <span className="text-[9px] font-black text-on-surface-variant uppercase tracking-widest opacity-60">
+                            {new Date(n.createdAt).toLocaleDateString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}
+                          </span>
+                        </div>
+                      </div>
+                    </div>
+                  ))
+                ) : (
+                  <div className="py-14 text-center px-8">
+                    <div className="w-12 h-12 rounded-2xl bg-surface-lowest border border-glass-border flex items-center justify-center mx-auto mb-3 text-on-surface-variant opacity-20">
+                      <Bell size={24} />
+                    </div>
+                    <p className="text-[11px] font-bold text-on-surface-variant uppercase tracking-[0.2em] opacity-40">All Caught Up</p>
+                  </div>
+                )}
+              </div>
+              <div className="p-3 bg-surface-container-highest border-t border-glass-border text-center">
+                <p className="text-[9px] font-black text-on-surface-variant uppercase tracking-widest opacity-40">Tap outside to dismiss</p>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
+        {/* Profile avatar (mobile) */}
+        <div className="w-9 h-9 rounded-full overflow-hidden border border-primary/20 shadow-md">
+          {user?.profileImageUrl ? (
+            <img src={user.profileImageUrl} alt="Profile" className="w-full h-full object-cover"
+              onError={(e) => { e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(user.fullName || 'U')}&background=3b82f6&color=fff`; }}
+            />
+          ) : (
+            <div className="w-full h-full bg-primary/10 flex items-center justify-center">
+              <span className="text-primary font-black text-xs">{user?.fullName?.charAt(0)?.toUpperCase() || 'U'}</span>
+            </div>
+          )}
+        </div>
       </div>
 
       {/* Right — Action hub (Hidden on Mobile) */}
@@ -123,7 +206,7 @@ const Topbar = ({ onMenuClick, isSidebarOpen }) => {
         </button>
 
         {/* Notifications */}
-        <div className="relative" ref={dropdownRef}>
+        <div className="relative">
           <button
             onClick={() => setShowNotifications(!showNotifications)}
             className={`w-10 h-10 flex items-center justify-center rounded-xl transition-all duration-300 active:scale-95 relative ${showNotifications ? 'bg-primary/10 text-primary' : 'text-on-surface-variant hover:bg-surface-low'}`}

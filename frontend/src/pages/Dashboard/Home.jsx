@@ -175,7 +175,7 @@ const Home = () => {
               <div className="w-9 h-9 rounded-xl bg-primary/20 flex items-center justify-center text-primary">
                 <Bot size={18} />
               </div>
-              <h4 className="text-sm font-semibold text-primary tracking-wide">ExpanseMate Assistant</h4>
+              <h4 className="text-sm font-semibold text-primary tracking-wide">ExpenseMate Assistant</h4>
             </div>
             <p className="text-sm text-on-surface-variant leading-relaxed mb-6 flex-1">
               {totalIncome > 0

@@ -160,7 +160,7 @@ const Login = () => {
         </motion.div>
 
         <motion.p variants={{ hidden: { opacity: 0 }, visible: { opacity: 1 } }} className="text-center mt-8 text-[12px] font-medium text-on-surface-variant">
-          New to ExpanseMate?
+          New to ExpenseMate?
           <Link to="/signup" className="text-primary font-black hover:text-primary-container transition-colors ml-2 uppercase tracking-widest leading-loose border-b-2 border-primary/20 pb-0.5">
             Sign Up
           </Link>

@@ -3,12 +3,12 @@ import { useAuth } from '../../context/AuthContext';
 import { toast } from 'react-hot-toast';
 import Modal from '../../components/common/Modal';
 import { Database, Upload, Download, FileText, FileSpreadsheet, ArrowRight, CheckCircle, AlertTriangle, X } from 'lucide-react';
+import { useDataManagement } from '../../hooks/useDataManagement';
 
 const DataManagement = () => {
   const { API } = useAuth();
   const fileInputRef = useRef(null);
-  const [loading, setLoading] = useState(false);
-  const [importResult, setImportResult] = useState(null);
+  const { loading, importResult, setImportResult, importCSV, exportData, downloadTemplate } = useDataManagement();
   const [showImportModal, setShowImportModal] = useState(false);
   const [showExportModal, setShowExportModal] = useState(false);
   const [exportType, setExportType] = useState('all');
@@ -17,107 +17,18 @@ const DataManagement = () => {
   const handleFileUpload = async (e) => {
     const file = e.target.files[0];
     if (!file) return;
-
-    if (!file.name.endsWith('.csv')) {
-      toast.error('Please upload a CSV file');
-      return;
-    }
-
-    setLoading(true);
-    try {
-      const text = await file.text();
-      const lines = text.trim().split('\n');
-      const headers = lines[0].split(',').map(h => h.trim().replace(/"/g, ''));
-
-      const data = lines.slice(1).map(line => {
-        const values = line.match(/(".*?"|[^",]+)/g)?.map(v => v.replace(/"/g, '').trim()) || [];
-        const row = {};
-        headers.forEach((h, i) => { row[h] = values[i] || ''; });
-        return row;
-      }).filter(row => row.Title || row.title || row.Amount || row.amount);
-
-      if (data.length === 0) {
-        toast.error('No valid data found in CSV');
-        setLoading(false);
-        return;
-      }
-
-      const res = await fetch(`${API}/api/v1/data/import`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify({ data }),
-      });
-
-      const result = await res.json();
-      if (result.success) {
-        setImportResult({ success: true, message: result.message, count: result.count });
-        toast.success(`Successfully imported ${result.count} records!`);
-      } else {
-        toast.error(result.message || 'Import failed');
-        setImportResult({ success: false, message: result.message });
-      }
-    } catch (err) {
-      toast.error('Failed to process file');
-      setImportResult({ success: false, message: err.message });
-    } finally {
-      setLoading(false);
-      if (fileInputRef.current) fileInputRef.current.value = '';
-    }
+    await importCSV(file);
+    if (fileInputRef.current) fileInputRef.current.value = '';
+    setShowImportModal(false);
   };
 
   const handleExport = async () => {
-    setLoading(true);
-    try {
-      if (exportFormat === 'pdf') {
-        // PDF export — opens HTML report in new tab for browser print-to-PDF
-        const res = await fetch(`${API}/api/v1/data/export/pdf`, { credentials: 'include' });
-        if (!res.ok) throw new Error('Export failed');
-        const html = await res.text();
-        const blob = new Blob([html], { type: 'text/html' });
-        const url = URL.createObjectURL(blob);
-        const newWin = window.open(url, '_blank');
-        if (newWin) {
-          setTimeout(() => newWin.print(), 1000);
-        }
-        toast.success('PDF report opened — use Print > Save as PDF');
-      } else {
-        // CSV export
-        const endpoint = exportType === 'expenses' ? 'expenses' : exportType === 'income' ? 'income' : 'all';
-        const res = await fetch(`${API}/api/v1/data/export/${endpoint}`, { credentials: 'include' });
-        if (!res.ok) throw new Error('Export failed');
-        const blob = await res.blob();
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `${endpoint}_${new Date().toISOString().split('T')[0]}.csv`;
-        a.click();
-        URL.revokeObjectURL(url);
-        toast.success('Export downloaded successfully!');
-      }
-      setShowExportModal(false);
-    } catch (err) {
-      toast.error(err.message || 'Export failed');
-    } finally {
-      setLoading(false);
-    }
+    const success = await exportData(exportType, exportFormat);
+    if (success) setShowExportModal(false);
   };
 
   const handleDownloadTemplate = async (type) => {
-    try {
-      const res = await fetch(`${API}/api/v1/data/template/${type}`, { credentials: 'include' });
-      if (!res.ok) throw new Error('Failed to download template');
-      const blob = await res.blob();
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `${type}_template.csv`;
-      a.click();
-      URL.revokeObjectURL(url);
-      toast.success(`${type} template downloaded!`);
-    } catch (err) {
-      toast.error('Failed to download template');
-    }
+    await downloadTemplate(type);
   };
 
   return (

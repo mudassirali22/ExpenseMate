@@ -117,7 +117,7 @@ const CurrencyConverter = () => {
   const filteredTo = currencies.filter(c => c.toLowerCase().includes(searchTo.toLowerCase()));
 
   return (
-    <section className="col-span-1 lg:col-span-7 stat-card !p-5 overflow-hidden border border-primary/20 shadow-2xl flex flex-col min-h-[500px] hover:border-primary/40 transition-colors">
+    <section className="col-span-1 lg:col-span-7 stat-card !p-5 overflow-hidden border border-primary/20 shadow-2xl flex flex-col min-h-[400px] hover:border-primary/40 transition-colors">
 
       {/* Dynamic Header Overlay */}
       <div className="flex items-center justify-between mb-6">

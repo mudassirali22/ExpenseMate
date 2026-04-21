@@ -25,23 +25,19 @@ import {
 } from 'lucide-react';
 import Modal from '../../components/common/Modal';
 import { AnimatePresence, motion } from 'framer-motion';
+import { useSettings } from '../../hooks/useSettings';
 
 const Settings = () => {
-  const { user, API, refreshUser, logout } = useAuth();
+  const { user, refreshUser, logout } = useAuth();
+  const { loading: deleting, updateProfile, sendPasswordReset, exportData, generateReport, terminateAccount } = useSettings(user, refreshUser, logout);
   const [activeTab, setActiveTab] = useState('Preferences');
 
-  // Preferences Settings
+  // Preferences Settings — synced from user object
   const [currency, setCurrency] = useState(user?.currency || 'PKR');
-  const [language, setLanguage] = useState(user?.language || 'English (US)');
-  const [timezone, setTimezone] = useState(user?.timezone || 'UTC+5 (Pakistan)');
+  const [timezone, setTimezone] = useState(user?.timezone || 'UTC+5:00 (Pakistan)');
   const [dateFormat, setDateFormat] = useState(user?.dateFormat || 'DD/MM/YYYY');
-  const [isDarkMode, setIsDarkMode] = useState(user?.theme === 'dark');
 
   // Security Settings
-  const [otpSent, setOtpSent] = useState(false);
-  const [otp, setOtp] = useState('');
-  const [newPassword, setNewPassword] = useState('');
-  const [deleting, setDeleting] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
 
   // Currency Dropdown State
@@ -50,17 +46,24 @@ const Settings = () => {
   const currencies = ['PKR', 'USD', 'EUR', 'GBP', 'INR', 'AED', 'SAR', 'CAD', 'AUD', 'JPY', 'CNY', 'SGD', 'CHF', 'MYR', 'NZD', 'HKD', 'SEK', 'NOK', 'DKK', 'TRY', 'BRL', 'ZAR', 'RUB', 'KRW', 'MXN', 'QAR', 'KWD', 'BHD'].sort();
   const currRef = React.useRef(null);
 
-  // Mock Sessions state to make "Revoke" functional
-  const [sessions, setSessions] = useState([
-    { id: 1, unit: 'Main Computer', os: 'Windows 11', loc: 'Karachi, PK', active: true },
-    { id: 2, unit: 'Mobile App', os: 'Android 14', loc: 'Lahore, PK', active: false }
-  ]);
-
-  // Notifications Settings
+  // Notifications Settings — synced from user
   const [notifBudget, setNotifBudget] = useState(user?.notifications?.budget ?? true);
   const [notifMonthly, setNotifMonthly] = useState(user?.notifications?.monthly ?? false);
   const [notifSecurity, setNotifSecurity] = useState(user?.notifications?.security ?? true);
   const [notifMarketing, setNotifMarketing] = useState(user?.notifications?.marketing ?? false);
+
+  // Re-sync all state when user object changes (e.g. after profile refresh)
+  React.useEffect(() => {
+    if (user) {
+      setCurrency(user.currency || 'PKR');
+      setTimezone(user.timezone || 'UTC+5:00 (Pakistan)');
+      setDateFormat(user.dateFormat || 'DD/MM/YYYY');
+      setNotifBudget(user.notifications?.budget ?? true);
+      setNotifMonthly(user.notifications?.monthly ?? false);
+      setNotifSecurity(user.notifications?.security ?? true);
+      setNotifMarketing(user.notifications?.marketing ?? false);
+    }
+  }, [user]);
 
   React.useEffect(() => {
     const handleClickOutside = (e) => {
@@ -72,86 +75,42 @@ const Settings = () => {
 
   const getFlagUrl = (code) => {
     if (code === 'EUR') return 'https://flagcdn.com/w40/eu.png';
-    return `https://flagcdn.com/w40/${code.substring(0, 2).toLowerCase()}.png`;
+    const map = { USD: 'us', GBP: 'gb', INR: 'in', AED: 'ae', SAR: 'sa', CAD: 'ca', AUD: 'au', JPY: 'jp', CNY: 'cn', SGD: 'sg', CHF: 'ch', MYR: 'my', NZD: 'nz', HKD: 'hk', SEK: 'se', NOK: 'no', DKK: 'dk', TRY: 'tr', BRL: 'br', ZAR: 'za', RUB: 'ru', KRW: 'kr', MXN: 'mx', QAR: 'qa', KWD: 'kw', BHD: 'bh', PKR: 'pk' };
+    const cc = map[code] || code.substring(0, 2).toLowerCase();
+    return `https://flagcdn.com/w40/${cc}.png`;
   };
 
   const tabs = [
     { id: 'Preferences', icon: Globe, desc: 'Regional Settings' },
     { id: 'Security', icon: ShieldCheck, desc: 'Login & Security' },
     { id: 'Notifications', icon: BellRing, desc: 'App Alerts' },
-    { id: 'Billing', icon: CreditCard, desc: 'Payment Methods' },
+    { id: 'Billing', icon: CreditCard, desc: 'Plan & Account' },
     { id: 'Data', icon: Database, desc: 'Your Data' }
   ];
 
   const handleUpdateSettings = async (updates) => {
-    try {
-      const res = await fetch(`${API}/api/v1/auth/profile`, {
-        method: 'PUT',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify(updates),
-      });
-      if (!res.ok) throw new Error('Update failed');
-      toast.success('Settings updated!');
-      refreshUser();
-    } catch (err) {
-      toast.error(err.message);
-    }
+    const ok = await updateProfile(updates);
+    if (ok) refreshUser();
   };
 
   const sendOTP = async () => {
-    try {
-      const res = await fetch(`${API}/api/v1/auth/forgot-password`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        credentials: 'include',
-        body: JSON.stringify({ email: user?.email })
-      });
-      if (!res.ok) throw new Error('Failed to send reset link');
-      toast.success('Password reset link sent to your email!');
-    } catch (err) { toast.error(err.message); }
+    await sendPasswordReset();
   };
 
   const handleDelete = async () => {
-    setDeleting(true);
-    try {
-      const res = await fetch(`${API}/api/v1/auth/delete-account`, {
-        method: 'DELETE', credentials: 'include',
-      });
-      if (!res.ok) throw new Error('Failed to delete account');
-      toast.success('Account deleted successfully');
-      logout();
-    } catch (err) {
-      toast.error(err.message);
-      setDeleting(false);
-      setIsDeleteModalOpen(false);
-    }
+    const success = await terminateAccount();
+    if (!success) setIsDeleteModalOpen(false);
   };
 
   const handleDownloadData = async () => {
-    toast.loading('Preparing your data...', { id: 'download' });
-    try {
-      const res = await fetch(`${API}/api/v1/auth/export-data`, { credentials: 'include' });
-      if (!res.ok) throw new Error('Failed to export data');
-
-      const blob = await res.blob();
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `expansemate-data-${new Date().toISOString().split('T')[0]}.csv`;
-      document.body.appendChild(a);
-      a.click();
-      window.URL.revokeObjectURL(url);
-
-      toast.success('Data exported successfully!', { id: 'download' });
-    } catch (err) {
-      toast.error(err.message, { id: 'download' });
-    }
+    await exportData();
   };
 
-  const revokeSession = (id) => {
-    setSessions(prev => prev.filter(s => s.id !== id));
-    toast.success('Session revoked successfully');
+  // Detect current device info for the Security tab
+  const currentDevice = {
+    browser: navigator.userAgent.includes('Chrome') ? 'Chrome' : navigator.userAgent.includes('Firefox') ? 'Firefox' : navigator.userAgent.includes('Safari') ? 'Safari' : 'Unknown',
+    os: navigator.userAgent.includes('Windows') ? 'Windows' : navigator.userAgent.includes('Mac') ? 'macOS' : navigator.userAgent.includes('Android') ? 'Android' : navigator.userAgent.includes('iPhone') ? 'iOS' : 'Unknown',
+    isMobile: /Mobi|Android/i.test(navigator.userAgent),
   };
 
   return (
@@ -283,7 +242,8 @@ const Settings = () => {
                       <select
                         value={timezone}
                         onChange={(e) => { setTimezone(e.target.value); handleUpdateSettings({ timezone: e.target.value }); }}
-                        className="input-field cursor-pointer text-xs font-bold uppercase tracking-widest appearance-none bg-surface-lowest"
+                        className="input-field cursor-pointer text-xs font-bold uppercase tracking-widest appearance-none bg-surface-lowest text-on-surface"
+                        style={{ backgroundColor: 'var(--color-surface-lowest)', color: 'var(--color-on-surface)' }}
                       >
                         <option value="UTC+5:00 (Pakistan)">UTC+5:00 (Pakistan)</option>
                         <option value="UTC+5:30 (India)">UTC+5:30 (India)</option>
@@ -342,34 +302,26 @@ const Settings = () => {
                   </div>
 
                   <div className="mt-8">
-                    <h4 className="text-[10px] font-black text-on-surface-variant uppercase tracking-[0.3em] mb-4 pl-1 opacity-60">Signed-in Devices</h4>
-                    <div className="space-y-4">
-                      {sessions.map((node) => (
-                        <div key={node.id} className="flex items-center justify-between p-5 rounded-2xl bg-surface-container/30 border border-glass-border/30 group hover:border-primary/20 transition-all">
-                          <div className="flex items-center gap-4">
-                            <div className={`w-10 h-10 rounded-xl flex items-center justify-center border-2 ${node.active ? 'bg-success/5 border-success/20 text-success' : 'bg-surface-low border-glass-border text-on-surface-variant'}`}>
-                              {node.os.includes('Windows') ? <Globe size={16} /> : <Smartphone size={16} />}
-                            </div>
-                            <div>
-                              <div className="flex items-center gap-2">
-                                <p className="text-xs font-black text-on-surface uppercase tracking-tight">{node.unit}</p>
-                                {node.active && <span className="px-1.5 py-0.5 bg-success text-white text-[7px] font-black rounded uppercase tracking-tighter">PRIMARY</span>}
-                              </div>
-                              <p className="text-[9px] text-on-surface-variant font-bold opacity-60 uppercase tracking-widest">{node.os} • {node.loc}</p>
-                            </div>
-                          </div>
-                          {!node.active && (
-                            <button
-                              onClick={() => revokeSession(node.id)}
-                              className="p-2.5 rounded-xl bg-error/10 text-error hover:bg-error hover:text-white transition-all transform active:scale-90"
-                              title="Revoke Access"
-                            >
-                              <LogOut size={14} />
-                            </button>
-                          )}
+                    <h4 className="text-[10px] font-black text-on-surface-variant uppercase tracking-[0.3em] mb-4 pl-1 opacity-60">Current Session</h4>
+                    <div className="flex items-center justify-between p-5 rounded-2xl bg-surface-container/30 border border-glass-border/30 group hover:border-success/20 transition-all">
+                      <div className="flex items-center gap-4">
+                        <div className="w-10 h-10 rounded-xl flex items-center justify-center border-2 bg-success/5 border-success/20 text-success">
+                          {currentDevice.isMobile ? <Smartphone size={16} /> : <Globe size={16} />}
                         </div>
-                      ))}
+                        <div>
+                          <div className="flex items-center gap-2">
+                            <p className="text-xs font-black text-on-surface uppercase tracking-tight">{currentDevice.browser} on {currentDevice.os}</p>
+                            <span className="px-1.5 py-0.5 bg-success text-white text-[7px] font-black rounded uppercase tracking-tighter">Active Now</span>
+                          </div>
+                          <p className="text-[9px] text-on-surface-variant font-bold opacity-60 uppercase tracking-widest">{user?.email} • This Device</p>
+                        </div>
+                      </div>
+                      <div className="text-[9px] font-black text-success opacity-60 uppercase tracking-widest flex items-center gap-1">
+                        <div className="w-1.5 h-1.5 rounded-full bg-success animate-pulse" />
+                        Secure
+                      </div>
                     </div>
+                    <p className="text-[9px] font-bold text-on-surface-variant/50 text-center mt-3 uppercase tracking-widest">Session management is handled via secure HTTP-only cookies</p>
                   </div>
                 </div>
               </div>
@@ -427,16 +379,7 @@ const Settings = () => {
                       </div>
                     </div>
                     <button
-                      onClick={async () => {
-                        toast.loading('Compiling your intelligence report...', { id: 'report' });
-                        try {
-                          const res = await fetch(`${API}/api/v1/auth/report/monthly`, { credentials: 'include' });
-                          if (!res.ok) throw new Error('Failed to generate report');
-                          toast.success('Report sent to your email!', { id: 'report' });
-                        } catch (err) {
-                          toast.error(err.message, { id: 'report' });
-                        }
-                      }}
+                      onClick={generateReport}
                       className="btn btn-primary px-10 !py-4 text-[11px] font-black uppercase tracking-[0.2em] shadow-xl shadow-primary/20 active:scale-95"
                     >
                       SEND REPORT NOW
@@ -447,37 +390,58 @@ const Settings = () => {
             )}
 
             {activeTab === 'Billing' && (
-              <div className="space-y-10">
+              <div className="space-y-8">
                 <div className="flex items-center gap-4">
                   <div className="w-12 h-12 rounded-xl bg-tertiary/10 flex items-center justify-center text-tertiary border border-tertiary/20"><CreditCard size={24} /></div>
                   <div>
-                    <h3 className="text-xl font-black text-on-surface uppercase tracking-tight">Billing <span className="text-tertiary italic">& Usage</span></h3>
-                    <p className="text-xs text-on-surface-variant opacity-60 font-bold uppercase tracking-widest mt-0.5">Manage your plans and payment methods</p>
+                    <h3 className="text-xl font-black text-on-surface uppercase tracking-tight">Plan <span className="text-tertiary italic">& Account</span></h3>
+                    <p className="text-xs text-on-surface-variant opacity-60 font-bold uppercase tracking-widest mt-0.5">Your subscription and account details</p>
                   </div>
                 </div>
 
-                <div className="p-10 rounded-[2.5rem] bg-gradient-to-br from-primary/10 via-surface-lowest to-secondary/5 border border-glass-border shadow-xl relative overflow-hidden">
-                  <div className="flex justify-between items-start mb-12 relative z-10">
-                    <div>
-                      <div className="flex items-center gap-2 mb-2">
-                        <Award size={20} className="text-primary" />
-                        <span className="text-[10px] font-black uppercase tracking-[0.3em] text-primary">Current Plan</span>
+                {/* Plan Card */}
+                <div className="p-8 rounded-[2.5rem] bg-gradient-to-br from-primary/10 via-surface-lowest to-secondary/5 border border-glass-border shadow-xl relative overflow-hidden">
+                  <div className="absolute top-0 right-0 w-48 h-48 bg-primary/5 rounded-full -translate-y-16 translate-x-16 blur-3xl" />
+                  <div className="relative z-10 space-y-6">
+                    <div className="flex justify-between items-start">
+                      <div>
+                        <div className="flex items-center gap-2 mb-2">
+                          <Award size={18} className="text-primary" />
+                          <span className="text-[10px] font-black uppercase tracking-[0.3em] text-primary">Current Plan</span>
+                        </div>
+                        <h4 className="text-4xl font-black text-on-surface uppercase italic">Free <span className="text-primary not-italic">Tier</span></h4>
+                        <p className="text-[10px] font-bold uppercase tracking-widest text-on-surface-variant opacity-50 mt-1">Full access to all core features</p>
                       </div>
-                      <h4 className="text-4xl font-black text-on-surface uppercase italic">Basic <span className="text-primary not-italic">User</span></h4>
+                      <div className="text-right">
+                        <p className="text-[10px] font-black text-on-surface-variant uppercase tracking-widest mb-1 opacity-50">Monthly Cost</p>
+                        <p className="text-3xl font-black text-success uppercase tracking-widest">Free</p>
+                      </div>
                     </div>
-                    <div className="text-right">
-                      <p className="text-[10px] font-black text-on-surface-variant uppercase tracking-widest mb-1 opacity-50">Monthly Cost</p>
-                      <p className="text-2xl font-black text-success uppercase tracking-widest">Free</p>
-                    </div>
-                  </div>
 
-                  <div className="flex flex-col md:flex-row items-center gap-8 bg-surface-lowest/50 p-6 rounded-3xl border border-glass-border relative z-10">
-                    <div className="w-16 h-10 bg-on-surface rounded-xl flex items-center justify-center text-primary font-black italic shadow-lg">VISA</div>
-                    <div className="flex-1 text-center md:text-left">
-                      <p className="text-lg font-black tracking-[0.2em] text-on-surface">•••• •••• •••• 4242</p>
-                      <p className="text-[10px] uppercase font-black tracking-widest text-on-surface-variant opacity-40 mt-1 italic">Linked for primary settlements</p>
+                    {/* Real user info */}
+                    <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 pt-4 border-t border-glass-border/40">
+                      <div className="p-4 rounded-2xl bg-surface-lowest/60 border border-glass-border">
+                        <p className="text-[9px] font-black uppercase tracking-widest text-on-surface-variant opacity-50 mb-1">Account Email</p>
+                        <p className="text-[11px] font-black text-on-surface truncate">{user?.email || '—'}</p>
+                      </div>
+                      <div className="p-4 rounded-2xl bg-surface-lowest/60 border border-glass-border">
+                        <p className="text-[9px] font-black uppercase tracking-widest text-on-surface-variant opacity-50 mb-1">Member Since</p>
+                        <p className="text-[11px] font-black text-on-surface">
+                          {user?.createdAt ? new Date(user.createdAt).toLocaleDateString(undefined, { month: 'long', year: 'numeric' }) : '—'}
+                        </p>
+                      </div>
+                      <div className="p-4 rounded-2xl bg-surface-lowest/60 border border-glass-border">
+                        <p className="text-[9px] font-black uppercase tracking-widest text-on-surface-variant opacity-50 mb-1">Days Active</p>
+                        <p className="text-[11px] font-black text-primary">
+                          {user?.createdAt ? Math.floor((Date.now() - new Date(user.createdAt)) / 86400000) : '—'} days
+                        </p>
+                      </div>
                     </div>
-                    <button className="text-[10px] font-black text-primary uppercase tracking-[0.2em] border-b-2 border-primary hover:opacity-70 transition-all">REPLACE CARD</button>
+
+                    <div className="flex items-center gap-3 p-4 rounded-2xl bg-success/5 border border-success/20">
+                      <ShieldCheck size={16} className="text-success shrink-0" />
+                      <p className="text-[10px] font-bold text-success uppercase tracking-widest">Your data is fully secured and encrypted — no payment information stored</p>
+                    </div>
                   </div>
                 </div>
               </div>

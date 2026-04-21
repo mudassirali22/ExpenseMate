@@ -1,6 +1,6 @@
-#  ExpanseMate — Professional Financial Management Dashboard
+#  ExpenseMate — Professional Financial Management Dashboard
 
-ExpanseMate is a high-performance, full-stack financial tracking application designed for individuals who demand precision and elegance in their personal finance management. Built with a modern **MERN (MongoDB, Express, React, Node)** stack, it offers a seamless blend of glassmorphic aesthetics and powerful analytical tools.
+ExpenseMate is a high-performance, full-stack financial tracking application designed for individuals who demand precision and elegance in their personal finance management. Built with a modern **MERN (MongoDB, Express, React, Node)** stack, it offers a seamless blend of glassmorphic aesthetics and powerful analytical tools.
 
 ---
 
@@ -69,7 +69,7 @@ ExpanseMate is a high-performance, full-stack financial tracking application des
 
 ##  Design Philosophy
 
-ExpanseMate focuses on **Visual Excellence**. By utilizing a custom **Glassmorphism** engine, the application provides a futuristic, lightweight feel that reduces cognitive load while maintaining high functionality.
+ExpenseMate focuses on **Visual Excellence**. By utilizing a custom **Glassmorphism** engine, the application provides a futuristic, lightweight feel that reduces cognitive load while maintaining high functionality.
 
 ---
 

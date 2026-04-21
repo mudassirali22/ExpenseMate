@@ -49,7 +49,7 @@ const Reminders = () => {
   const handleDelete = async (id) => {
     try {
       await fetch(`${API}/api/v1/reminders/delete/${id}`, { method: 'DELETE', credentials: 'include' });
-      toast.success('Deleted'); fetchReminders();
+      toast.success('Deleted', { id: 'del-succ-rem', duration: 3000 }); fetchReminders();
     } catch (err) { toast.error('Failed'); }
   };
 

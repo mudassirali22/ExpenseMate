@@ -5,8 +5,7 @@ import {
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
   PieChart, Pie, Cell,
 } from 'recharts';
-import jsPDF from 'jspdf';
-import autoTable from 'jspdf-autotable';
+// jspdf and jspdf-autotable are loaded dynamically inside handleDownloadPDF
 import { motion } from 'framer-motion';
 import {
   BarChart3, TrendingUp, TrendingDown,
@@ -47,6 +46,10 @@ const Analytics = () => {
   }, [API]);
 
   const filteredData = useMemo(() => {
+    if (filterType === 'All Time') {
+      return { expenses, incomes };
+    }
+
     const now = new Date();
     let startDate = new Date();
     if (filterType === 'This Week') {
@@ -124,93 +127,129 @@ const Analytics = () => {
     .reverse()
     .map(([name, data]) => ({ name: name.split(' ')[0], income: data.income, expense: data.expense }));
 
-  // PDF Export
-  const handleDownloadPDF = () => {
-    const doc = new jsPDF();
-    const pageWidth = doc.internal.pageSize.getWidth();
-    doc.setFontSize(22);
-    doc.setTextColor(26, 26, 46);
-    doc.text('ExpanseMate Financial Report', 20, 20);
-    doc.setFontSize(10);
-    doc.setTextColor(100);
-    doc.text(`Generated on: ${new Date().toLocaleString()}`, 20, 28);
-    doc.text(`Report Period: ${filterType}`, 20, 33);
-    doc.setDrawColor(230, 230, 230);
-    doc.line(20, 38, pageWidth - 20, 38);
-    doc.setFontSize(14);
-    doc.setTextColor(50);
-    doc.text('Financial Summary', 20, 48);
-    autoTable(doc, {
-      startY: 52,
-      head: [['Metric', `Amount (${currencySymbol})` ]],
-      body: [
-        ['Total Income',    `${currencySymbol} ${totalIncome.toLocaleString()}`],
-        ['Total Expenses',  `${currencySymbol} ${totalExpense.toLocaleString()}`],
-        ['Net Savings',     `${currencySymbol} ${netSavings.toLocaleString()}`],
-        ['Portfolio Growth', `${portfolioGrowth}%`],
-        ['Active Savings',  `${currencySymbol} ${activeSavings.toLocaleString()}`],
-      ],
-      theme: 'grid',
-      headStyles: { fillColor: [99, 102, 241] },
-      styles: { fontSize: 10, cellPadding: 5 },
-    });
-    doc.text('Income Details', 20, doc.lastAutoTable.finalY + 15);
-    autoTable(doc, {
-      startY: doc.lastAutoTable.finalY + 20,
-      head: [['Date', 'Description', 'Source', 'Amount']],
-      body: fIncomes.map(i => [
-        new Date(i.date || i.createdAt).toLocaleDateString(),
-        i.title || i.description,
-        i.source || 'Other',
-        `${currencySymbol} ${i.amount.toLocaleString()}`,
-      ]),
-      theme: 'striped',
-      headStyles: { fillColor: [16, 185, 129] },
-      styles: { fontSize: 9 },
-    });
-    if (doc.lastAutoTable.finalY > 200) doc.addPage();
-    doc.text('Expense Details', 20, doc.lastAutoTable.finalY + 15);
-    autoTable(doc, {
-      startY: doc.lastAutoTable.finalY + 20,
-      head: [['Date', 'Description', 'Category', 'Amount']],
-      body: fExpenses.map(e => [
-        new Date(e.date || e.createdAt).toLocaleDateString(),
-        e.title || e.description,
-        e.category || 'Other',
-        `${currencySymbol} ${e.amount.toLocaleString()}`,
-      ]),
-      theme: 'striped',
-      headStyles: { fillColor: [239, 68, 68] },
-      styles: { fontSize: 9 },
-    });
-    doc.setFontSize(10);
-    doc.setTextColor(150);
-    doc.text('This report is generated automatically by ExpanseMate.', 20, doc.internal.pageSize.getHeight() - 10);
-    doc.save(`ExpanseMate_Report_${filterType.replace(/ /g, '_')}.pdf`);
-    toast.success('PDF downloaded successfully!');
+  // PDF Export — uses dynamic import to handle jspdf v4 ESM/CJS interop with Vite
+  const handleDownloadPDF = async () => {
+    try {
+      toast.loading('Generating PDF…', { id: 'pdf' });
+
+      // Dynamic import handles jspdf v4 correctly regardless of bundler interop mode
+      const jspdfModule = await import('jspdf');
+      const jsPDFClass = jspdfModule.jsPDF || jspdfModule.default?.jsPDF || jspdfModule.default;
+      const autoTableModule = await import('jspdf-autotable');
+      const autoTable = autoTableModule.default || autoTableModule.autoTable;
+
+      const doc = new jsPDFClass();
+      const pageWidth = doc.internal.pageSize.getWidth();
+
+      doc.setFontSize(22);
+      doc.setTextColor(26, 26, 46);
+      doc.text('ExpenseMate Financial Report', 20, 20);
+      doc.setFontSize(10);
+      doc.setTextColor(100);
+      doc.text(`Generated on: ${new Date().toLocaleString()}`, 20, 28);
+      doc.text(`Report Period: ${filterType}`, 20, 33);
+      doc.setDrawColor(230, 230, 230);
+      doc.line(20, 38, pageWidth - 20, 38);
+      doc.setFontSize(14);
+      doc.setTextColor(50);
+      doc.text('Financial Summary', 20, 48);
+
+      autoTable(doc, {
+        startY: 52,
+        head: [['Metric', `Amount (${currencySymbol})`]],
+        body: [
+          ['Total Income',     `${currencySymbol} ${totalIncome.toLocaleString()}`],
+          ['Total Expenses',   `${currencySymbol} ${totalExpense.toLocaleString()}`],
+          ['Net Savings',      `${currencySymbol} ${netSavings.toLocaleString()}`],
+          ['Portfolio Growth', `${portfolioGrowth}%`],
+          ['Active Savings',   `${currencySymbol} ${activeSavings.toLocaleString()}`],
+        ],
+        theme: 'grid',
+        headStyles: { fillColor: [99, 102, 241] },
+        styles: { fontSize: 10, cellPadding: 5 },
+      });
+
+      doc.setFontSize(14);
+      doc.setTextColor(50);
+      doc.text('Income Details', 20, doc.lastAutoTable.finalY + 15);
+      autoTable(doc, {
+        startY: doc.lastAutoTable.finalY + 20,
+        head: [['Date', 'Description', 'Source', 'Amount']],
+        body: fIncomes.map(i => [
+          new Date(i.date || i.createdAt).toLocaleDateString(),
+          i.title || i.description || '—',
+          i.source || 'Other',
+          `${currencySymbol} ${i.amount.toLocaleString()}`,
+        ]),
+        theme: 'striped',
+        headStyles: { fillColor: [16, 185, 129] },
+        styles: { fontSize: 9 },
+      });
+
+      if (doc.lastAutoTable.finalY > 220) doc.addPage();
+      doc.setFontSize(14);
+      doc.setTextColor(50);
+      doc.text('Expense Details', 20, doc.lastAutoTable.finalY + 15);
+      autoTable(doc, {
+        startY: doc.lastAutoTable.finalY + 20,
+        head: [['Date', 'Description', 'Category', 'Amount']],
+        body: fExpenses.map(e => [
+          new Date(e.date || e.createdAt).toLocaleDateString(),
+          e.title || e.description || '—',
+          e.category || 'Other',
+          `${currencySymbol} ${e.amount.toLocaleString()}`,
+        ]),
+        theme: 'striped',
+        headStyles: { fillColor: [239, 68, 68] },
+        styles: { fontSize: 9 },
+      });
+
+      doc.setFontSize(9);
+      doc.setTextColor(150);
+      doc.text('This report is generated automatically by ExpenseMate.', 20, doc.internal.pageSize.getHeight() - 10);
+      doc.save(`ExpenseMate_Report_${filterType.replace(/ /g, '_')}.pdf`);
+      toast.success('PDF downloaded!', { id: 'pdf' });
+    } catch (err) {
+      console.error('PDF generation error:', err);
+      toast.error(`PDF failed: ${err.message}`, { id: 'pdf' });
+    }
   };
 
   // CSV Export 
   const handleDownloadCSV = () => {
     const rows = [
-      ['Period', 'Total Income', 'Total Expense', 'Net Savings', 'Status'],
-      ...trendData
-        .filter(([, d]) => d.income > 0 || d.expense > 0)
-        .map(([month, d]) => {
-          const net    = d.income - d.expense;
-          const status = net > 0 ? 'Surplus' : net < 0 ? 'Deficit' : 'Neutral';
-          return [month, d.income, d.expense, net, status];
-        }),
+      ['Date', 'Type', 'Description', 'Category/Source', 'Amount'],
+      ...fExpenses.map(e => [
+        new Date(e.date || e.createdAt).toLocaleDateString(),
+        'Expense',
+        e.title || e.description || '—',
+        e.category || 'Other',
+        `${currencySymbol} ${e.amount.toLocaleString()}`
+      ]),
+      ...fIncomes.map(i => [
+        new Date(i.date || i.createdAt).toLocaleDateString(),
+        'Income',
+        i.title || i.description || '—',
+        i.source || 'Other',
+        `${currencySymbol} ${i.amount.toLocaleString()}`
+      ])
     ];
-    const csv    = rows.map(r => r.join(',')).join('\n');
-    const blob   = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-    const url    = URL.createObjectURL(blob);
-    const link   = document.createElement('a');
-    link.href    = url;
-    link.download = `ExpanseMate_Log_${filterType.replace(/ /g, '_')}.csv`;
+    
+    // Sort combined rows by date descending (skipping the header)
+    const dataRows = rows.slice(1).sort((a, b) => new Date(b[0]) - new Date(a[0]));
+    const finalRows = [rows[0], ...dataRows];
+
+    const csvContent = finalRows.map(r => r.map(cell => `"${(cell || '').replace(/"/g, '""')}"`).join(',')).join('\n');
+    const blob       = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url        = URL.createObjectURL(blob);
+    const link       = document.createElement('a');
+    link.href        = url;
+    link.download    = `ExpenseMate_Overall_Data_${filterType.replace(/ /g, '_')}.csv`;
+    document.body.appendChild(link);
     link.click();
+    document.body.removeChild(link);
     URL.revokeObjectURL(url);
-    toast.success('CSV exported!');
+    toast.success('CSV data exported!');
   };
 
   // Loading
@@ -247,6 +286,7 @@ const Analytics = () => {
             <option value="Last 30 Days">Last 30 Days</option>
             <option value="This Quarter">This Quarter</option>
             <option value="This Year">This Year</option>
+            <option value="All Time">All Time (Overall)</option>
           </select>
 
           {/* Export PDF */}

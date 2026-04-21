@@ -4,28 +4,12 @@ const cors = require("cors");
 const cookieParser = require("cookie-parser");
 
 const connectDB = require("./config/db");
-const authRoutes = require("./routes/authRoutes");
-const expenseRoutes = require("./routes/expenseRoutes");
-const incomeRoutes = require("./routes/incomeRoutes");
-const dashboardRoutes = require("./routes/dashboardRoutes");
-const goalRoutes = require("./routes/goalRoutes");
-const reminderRoutes = require("./routes/reminderRoutes");
-const budgetRoutes = require("./routes/budgetRoutes");
-const noteRoutes = require("./routes/noteRoutes");
-const analyticsRoutes = require("./routes/analyticsRoutes");
-const aiRoutes = require("./routes/aiRoutes");
-const taxRoutes = require("./routes/taxRoutes");
-const subscriptionRoutes = require("./routes/subscriptionRoutes");
-const portfolioRoutes = require("./routes/portfolioRoutes");
-const sharedWalletRoutes = require("./routes/sharedWalletRoutes");
-const dataRoutes = require("./routes/dataRoutes");
-const notificationRoutes = require("./routes/notificationRoutes");
-
+const apiRoutes = require("./routes/index");
 
 const app = express();
 
 const allowedOrigins = [
-  "https://expansemate.onrender.com",
+  "https://ExpenseMate.onrender.com",
   "http://localhost:5173",
   "http://localhost:5174",
   process.env.CLIENT_URL,
@@ -61,25 +45,10 @@ app.use(cookieParser());
 connectDB();
 
 app.get("/", (req, res) => {
-  res.send("ExpanseMate API v2.0 — Luminescent Ledger");
+  res.send("ExpenseMate API v2.0 — Luminescent Ledger");
 });
 
-app.use("/api/v1/auth", authRoutes);
-app.use("/api/v1/expenses", expenseRoutes);
-app.use("/api/v1/income", incomeRoutes);
-app.use("/api/v1/dashboard", dashboardRoutes);
-app.use("/api/v1/goals", goalRoutes);
-app.use("/api/v1/reminders", reminderRoutes);
-app.use("/api/v1/budgets", budgetRoutes);
-app.use("/api/v1/notes", noteRoutes);
-app.use("/api/v1/analytics", analyticsRoutes);
-app.use("/api/v1/ai", aiRoutes);
-app.use("/api/v1/tax", taxRoutes);
-app.use("/api/v1/subscription", subscriptionRoutes);
-app.use("/api/v1/portfolio", portfolioRoutes);
-app.use("/api/v1/shared-wallet", sharedWalletRoutes);
-app.use("/api/v1/data", dataRoutes);
-app.use("/api/v1/notifications", notificationRoutes);
+app.use("/api/v1", apiRoutes);
 
 const PORT = process.env.PORT || 5000;
 app.listen(PORT, () => console.log(`Server running on port ${PORT}`));

@@ -50,7 +50,7 @@ USER DATA SUMMARY:
         const genAI = new GoogleGenerativeAI(process.env.GEMINI_API_KEY);
         const model = genAI.getGenerativeModel({ model: "gemini-2.0-flash" });
 
-        const prompt = `You are the ExpanseMate AI Financial Advisor. You help people manage their money in a simple and friendly way.
+        const prompt = `You are the expenseMate AI Financial Advisor. You help people manage their money in a simple and friendly way.
 Your tone is helpful, easy to understand, and professional. Use simple English and avoid complex finance words.
 
 Here is the user's financial info:
@@ -145,15 +145,15 @@ To reach these faster, try to move your leftover **Rs ${savingsAmt.toLocaleStrin
   }
 
   // DEFAULT RESULT (Financial Snapshot) - Always give a result as requested
-  return `### 📊 Your ExpanseMate Snapshot
+  return `Your expenseMate Snapshot
 
 **Current State:**
 - **Inbound**: Rs ${totalIncome.toLocaleString()}
 - **Outbound**: Rs ${totalExpense.toLocaleString()}
 - **Retention**: ${savingsRate}% (Rs ${savingsAmt.toLocaleString()})
 
-**Quick Insight:**
-You have **Rs ${savingsAmt.toLocaleString()}** left over. ${savingsRate > 20 ? "Your savings rate is looking very healthy!" : "Try to reduce your spending on **" + topCat + "** to increase your savings."}
+Quick Insight:
+You have Rs ${savingsAmt.toLocaleString()} left over. ${savingsRate > 20 ? "Your savings rate is looking very healthy!" : "Try to reduce your spending on" + topCat + "to increase your savings."}
 
 Ask me something specific if you need a deep audit or saving tips!`;
 }

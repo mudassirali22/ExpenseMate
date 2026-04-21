@@ -69,7 +69,7 @@ const Landing = () => {
             </h1>
 
             <p className="text-sm sm:text-lg text-on-surface-variant max-w-2xl mx-auto leading-relaxed mb-12">
-              Easily manage your spending, reach your goals, and master your financial future with ExpanseMate.
+              Easily manage your spending, reach your goals, and master your financial future with ExpenseMate.
             </p>
 
             <div className="flex flex-col sm:flex-row items-center justify-center gap-5">
@@ -207,7 +207,7 @@ const Landing = () => {
             </div>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
               {[
-                { name: 'Ahmed K.', role: 'Entrepreneur', text: 'ExpanseMate is my financial hub. The AI advisor saved me thousands in deductions.' },
+                { name: 'Ahmed K.', role: 'Entrepreneur', text: 'ExpenseMate is my financial hub. The AI advisor saved me thousands in deductions.' },
                 { name: 'Sara M.', role: 'Freelancer', text: 'Stunning design and robust functionality. It has improved my income management.' },
                 { name: 'Ali R.', role: 'Engineer', text: 'The shared wallet feature is a game-changer for our household transparency.' },
               ].map((t, i) => (
@@ -256,11 +256,11 @@ const Landing = () => {
             <div className="w-10 h-10 rounded-xl bg-primary flex items-center justify-center shadow-lg shadow-primary/20">
               <Wallet size={20} className="text-white" />
             </div>
-            <span className="text-2xl font-black tracking-tighter text-primary">ExpanseMate</span>
+            <span className="text-2xl font-black tracking-tighter text-primary">ExpenseMate</span>
           </Link>
           <p className="text-[10px] text-on-surface-variant font-black uppercase tracking-[0.2em] text-center sm:text-right">
             Developed by <a href="https://mudassirali.vercel.app/">Mudassir ali</a> <br />
-            © {new Date().getFullYear()} ExpanseMate Intelligence.
+            © {new Date().getFullYear()} ExpenseMate Intelligence.
           </p>
           <div className="flex items-center gap-4 px-6 py-2 rounded-full bg-surface-lowest border border-glass-border">
             <Shield size={14} className="text-primary" />

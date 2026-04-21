@@ -1,5 +1,6 @@
 import React, { createContext, useContext, useState, useEffect, useCallback, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { apiClient } from '../utils/apiClient';
 
 const AuthContext = createContext(null);
 
@@ -17,12 +18,7 @@ export const AuthProvider = ({ children }) => {
 
   const checkAuth = useCallback(async () => {
     try {
-      const res = await fetch(`${API}/api/v1/auth/me`, {
-        method: 'GET',
-        credentials: 'include',
-      });
-      if (!res.ok) throw new Error('Not authenticated');
-      const data = await res.json();
+      const data = await apiClient.get('/api/v1/auth/me');
       setUser(data.user || data);
     } catch {
       setUser(null);
@@ -30,48 +26,28 @@ export const AuthProvider = ({ children }) => {
     } finally {
       setLoading(false);
     }
-  }, [API]);
+  }, []);
 
   useEffect(() => {
     checkAuth();
   }, [checkAuth]);
 
   const login = async (email, password) => {
-    const res = await fetch(`${API}/api/v1/auth/login`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      credentials: 'include',
-      body: JSON.stringify({ email, password }),
-    });
-    const data = await res.json();
-    if (!res.ok) throw new Error(data.message || 'Login failed');
+    const data = await apiClient.post('/api/v1/auth/login', { email, password });
     localStorage.setItem('token', data.token);
     setUser(data.user || data);
     return data;
   };
 
   const register = async (formData) => {
-    const res = await fetch(`${API}/api/v1/auth/register`, {
-      method: 'POST',
-      credentials: 'include',
-      body: formData,
-    });
-    const data = await res.json();
-    if (!res.ok) throw new Error(data.message || 'Registration failed');
+    const data = await apiClient.postFormData('/api/v1/auth/register', formData);
     localStorage.setItem('token', data.token);
     setUser(data.user || data);
     return data;
   };
 
   const googleAuth = async (credential) => {
-    const res = await fetch(`${API}/api/v1/auth/google`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      credentials: 'include',
-      body: JSON.stringify({ credential }),
-    });
-    const data = await res.json();
-    if (!res.ok) throw new Error(data.message || 'Google Auth failed');
+    const data = await apiClient.post('/api/v1/auth/google', { credential });
     localStorage.setItem('token', data.token);
     setUser(data.user || data);
     return data;
@@ -79,10 +55,7 @@ export const AuthProvider = ({ children }) => {
 
   const logout = async () => {
     try {
-      await fetch(`${API}/api/v1/auth/logout`, {
-        method: 'POST',
-        credentials: 'include',
-      });
+      await apiClient.post('/api/v1/auth/logout', {});
     } catch (e) {
       console.error('Logout error:', e);
     }

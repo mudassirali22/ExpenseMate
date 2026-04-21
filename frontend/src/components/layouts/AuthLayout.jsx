@@ -74,7 +74,7 @@ const AuthLayout = ({ children }) => {
             </h2>
 
             <p className="text-lg text-on-surface-variant font-medium max-w-md leading-relaxed">
-              Join thousands of people tracking their money with ExpanseMate.
+              Join thousands of people tracking their money with ExpenseMate.
               Simple, fast, and easy to use.
             </p>
           </div>

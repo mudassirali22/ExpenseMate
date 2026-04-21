@@ -186,7 +186,7 @@ const Subscriptions = () => {
                 });
                 const data = await res.json();
                 if (data.success) {
-                  toast.success("Service removed");
+                  toast.success("Service removed", { id: 'del-succ-sub', duration: 3000 });
                   fetchSubscriptions();
                 } else {
                   toast.error(data.message || "Delete failed");
@@ -421,7 +421,7 @@ const Subscriptions = () => {
               return (
                 <div key={sub._id} className="stat-card flex flex-col group hover:border-primary/40 transition-all duration-300 relative overflow-hidden">
                   {!isEditing && (
-                    <div className="absolute top-0 right-0 p-3 opacity-0 group-hover:opacity-100 transition-opacity flex gap-2 z-20">
+                    <div className="absolute top-0 right-0 p-3 opacity-100 lg:opacity-0 lg:group-hover:opacity-100 transition-opacity flex gap-2 z-20">
                       <button onClick={() => startInlineEdit(sub)} className="p-2 bg-surface-container rounded-lg text-primary hover:bg-primary hover:text-white transition-all"><Edit2 size={12} /></button>
                       <button onClick={() => openDeleteModal(sub)} className="p-2 bg-surface-container rounded-lg text-error hover:bg-error hover:text-white transition-all"><Trash2 size={12} /></button>
                     </div>

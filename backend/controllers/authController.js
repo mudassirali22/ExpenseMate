@@ -36,7 +36,7 @@ exports.registerUser = async (req, res) => {
 
     let imageUrl = null;
     if (req.file) {
-      const result = await uploadToCloudinary(req.file.buffer, "expansemate/temp_pre_signup");
+      const result = await uploadToCloudinary(req.file.buffer, "ExpenseMate/temp_pre_signup");
       imageUrl = result.secure_url;
     }
 
@@ -254,7 +254,7 @@ exports.updateProfile = async (req, res) => {
       user.password = await bcrypt.hash(password, 10);
     }
     if (req.file) {
-      const result = await uploadToCloudinary(req.file.buffer, `expansemate/user-${user._id}/profile`);
+      const result = await uploadToCloudinary(req.file.buffer, `ExpenseMate/user-${user._id}/profile`);
       user.profileImageUrl = result.secure_url;
     }
 
@@ -319,7 +319,7 @@ exports.forgotPassword = async (req, res) => {
     try {
       await sendEmail({
         email: user.email,
-        subject: "Password Reset Request - ExpanseMate",
+        subject: "Password Reset Request - ExpenseMate",
         message: `Reset your password here: ${resetUrl}`,
         html: htmlContent
       });
@@ -419,7 +419,7 @@ exports.forceChangePassword = async (req, res) => {
       const html = templates.activationTemplate(user.fullName, `${process.env.CLIENT_URL}/dashboard`);
       await sendEmail({
         email: user.email,
-        subject: "Account Ready - ExpanseMate",
+        subject: "Account Ready - ExpenseMate",
         message: "Your password is set. Access your dashboard now.",
         html
       });
