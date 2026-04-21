@@ -5,7 +5,8 @@ import { motion, AnimatePresence } from 'framer-motion';
 import {
   TrendingUp, Plus, Trash2, ArrowUpRight, ArrowDownRight, Briefcase,
   Shield, PieChart as PieIcon, Activity, Globe, Zap, DollarSign,
-  Edit2, AlertCircle, Clock, Wallet, BarChart3, Info, ArrowDown, ChevronDown
+  Edit2, AlertCircle, Clock, Wallet, BarChart3, Info,
+  ArrowDown
 } from 'lucide-react';
 import Modal from '../../components/common/Modal';
 import {
@@ -379,11 +380,6 @@ const Portfolio = () => {
                                 <span className="w-1 h-1 rounded-full bg-on-surface-variant opacity-30" />
                                 <span className="text-[9px] font-bold text-on-surface-variant uppercase tracking-tighter opacity-60">{asset.platform || 'Direct'}</span>
                               </div>
-                              {asset.notes && (
-                                <p className="text-[10px] text-on-surface-variant/70 italic mt-1.5 border-l border-primary/20 pl-2 leading-relaxed max-w-[200px] truncate group-hover:whitespace-normal group-hover:max-w-none transition-all">
-                                  {asset.notes}
-                                </p>
-                              )}
                             </div>
                           </div>
                         </td>
@@ -465,7 +461,7 @@ const Portfolio = () => {
                     <span className="truncate">{ASSET_TYPES.find(t => t.id === formData.assetType)?.label}</span>
                   </div>
                   <motion.div animate={{ rotate: showTypeDropdown ? 180 : 0 }}>
-                    <ChevronDown size={14} className="opacity-40" />
+                    <ArrowDown size={14} className="opacity-40" />
                   </motion.div>
                 </div>
 
