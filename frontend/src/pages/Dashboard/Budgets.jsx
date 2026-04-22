@@ -276,7 +276,7 @@ const Budgets = () => {
               try {
                 const res = await fetch(`${API}/api/v1/budgets/delete/${id}`, { method: 'DELETE', credentials: 'include' });
                 if (res.ok) {
-                  toast.success("Budget removed", { id: 'del-succ-budg', duration: 3000 });
+                  toast.success("Budget removed", { id: 'del-succ-budg', duration: 3000 }); setTimeout(() => toast.dismiss('del-succ-budg'), 3000);
                   refreshAll();
                 } else {
                   toast.error("Deletion failure");
