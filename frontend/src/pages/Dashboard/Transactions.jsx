@@ -319,7 +319,7 @@ const Transactions = () => {
         <p className="text-[11px] font-medium text-on-surface-variant leading-relaxed">
           Remove this record? This will permanently erase the <span className="text-error font-bold">{item.title}</span> entry from your vault.
         </p>
-        <div className="flex justify-end gap-2 mt-1" onPointerDownCapture={(e) => e.stopPropagation()}>
+        <div className="flex justify-end gap-2 mt-1">
           <button onClick={() => toast.dismiss(t.id)} className="text-[10px] font-bold text-on-surface-variant hover:text-on-surface transition-all">Cancel</button>
           <button
             onClick={async () => {
@@ -488,8 +488,8 @@ const Transactions = () => {
           <button
             onClick={() => setShowMobileDateRange(v => !v)}
             className={`shrink-0 w-12 h-12 flex items-center justify-center rounded-2xl border transition-all ${showMobileDateRange || dateFrom || dateTo
-                ? 'bg-primary/10 border-primary/30 text-primary'
-                : 'bg-surface-container border-glass-border text-on-surface-variant'
+              ? 'bg-primary/10 border-primary/30 text-primary'
+              : 'bg-surface-container border-glass-border text-on-surface-variant'
               }`}
           >
             <Calendar size={16} />

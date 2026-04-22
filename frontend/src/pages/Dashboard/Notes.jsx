@@ -85,14 +85,14 @@ const Notes = () => {
               headers: { 'Content-Type': 'application/json' },
               credentials: 'include',
               body: JSON.stringify({ message: `Reminder Due: ${reminder.text}`, type: 'REMINDER', link: '/notes' })
-            }).catch(() => {}),
+            }).catch(() => { }),
             fetch(`${API}/api/v1/reminders/notified/${reminder._id}`, {
               method: 'PUT', credentials: 'include'
-            }).catch(() => {})
+            }).catch(() => { })
           ]);
-          Promise.allSettled(tasks).catch(() => {});
+          Promise.allSettled(tasks).catch(() => { });
         })
-        .catch(() => {});
+        .catch(() => { });
     };
     checkDue();
     const interval = setInterval(checkDue, 60000);
@@ -160,7 +160,7 @@ const Notes = () => {
         <p className="text-[11px] font-medium text-on-surface-variant leading-relaxed">
           Permanent removal? This action cannot be reversed and will clear the {type === 'note' ? 'note' : 'reminder'} from your database.
         </p>
-        <div className="flex justify-end gap-2 mt-1" onPointerDownCapture={(e) => e.stopPropagation()}>
+        <div className="flex justify-end gap-2 mt-1">
           <button onClick={() => toast.dismiss(t.id)} className="text-[10px] font-bold text-on-surface-variant hover:text-on-surface transition-all">Cancel</button>
           <button
             onClick={async () => {
@@ -519,7 +519,7 @@ const Notes = () => {
         <div className="space-y-6">
           {/* Priority Filters Dropdown */}
           <div className="relative" ref={remFilterRef}>
-            <button 
+            <button
               onClick={() => setShowRemFilterDrop(!showRemFilterDrop)}
               className="flex items-center gap-3 px-5 py-2.5 bg-surface-lowest border-2 border-glass-border rounded-xl hover:border-secondary/30 transition-all group"
             >
@@ -542,27 +542,27 @@ const Notes = () => {
                   className="absolute top-full left-0 w-56 mt-2 bg-white border border-glass-border rounded-2xl shadow-2xl z-[100] overflow-hidden backdrop-blur-3xl"
                 >
                   <div className="p-3 border-b border-glass-border bg-surface-container/10">
-                    <input 
-                      type="text" 
-                      autoFocus 
-                      value={remFilterSearch} 
-                      onChange={e => setNoteFilterSearch(e.target.value)} 
-                      placeholder="SEARCH PRIORITY..." 
-                      className="w-full bg-transparent text-[9px] font-black text-on-surface outline-none placeholder:text-on-surface-variant/30 uppercase tracking-widest" 
+                    <input
+                      type="text"
+                      autoFocus
+                      value={remFilterSearch}
+                      onChange={e => setNoteFilterSearch(e.target.value)}
+                      placeholder="SEARCH PRIORITY..."
+                      className="w-full bg-transparent text-[9px] font-black text-on-surface outline-none placeholder:text-on-surface-variant/30 uppercase tracking-widest"
                     />
                   </div>
                   <div className="max-h-60 overflow-y-auto p-2 custom-scrollbar">
                     {['All', 'High', 'Medium', 'Low'].filter(p => p.toLowerCase().includes(noteFilterSearch.toLowerCase())).map(p => (
                       <button
                         key={p}
-                        onClick={() => { 
-                          setRemFilterPriority(p); 
-                          setShowRemFilterDrop(false); 
+                        onClick={() => {
+                          setRemFilterPriority(p);
+                          setShowRemFilterDrop(false);
                         }}
-                        className={`w-full flex items-center justify-between p-2.5 rounded-xl transition-all border-2 mb-1 last:mb-0 ${remFilterPriority === p 
-                          ? 'bg-secondary/10 border-secondary text-secondary' 
+                        className={`w-full flex items-center justify-between p-2.5 rounded-xl transition-all border-2 mb-1 last:mb-0 ${remFilterPriority === p
+                          ? 'bg-secondary/10 border-secondary text-secondary'
                           : 'bg-transparent border-transparent hover:bg-surface-high'
-                        }`}
+                          }`}
                       >
                         <div className="flex items-center gap-3">
                           <div className={`w-2 h-2 rounded-full ${p === 'High' ? 'bg-error' : p === 'Medium' ? 'bg-secondary' : p === 'Low' ? 'bg-primary' : 'bg-on-surface-variant opacity-40'}`} />

@@ -105,7 +105,7 @@ const TaxMonitor = () => {
             <p className="text-[11px] font-medium text-on-surface-variant leading-relaxed">
                Destroy the <span className="text-error font-bold">{payment.description || 'Tax Remittance'}</span> record? This action is official and irreversible.
             </p>
-            <div className="flex justify-end gap-2 mt-1" onPointerDownCapture={(e) => e.stopPropagation()}>
+            <div className="flex justify-end gap-2 mt-1">
                <button onClick={() => toast.dismiss(t.id)} className="text-[10px] font-bold text-on-surface-variant hover:text-on-surface transition-all">Cancel</button>
                <button
                   onClick={async () => {
