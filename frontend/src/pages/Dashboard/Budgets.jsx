@@ -268,7 +268,7 @@ const Budgets = () => {
         <p className="text-[11px] font-medium text-on-surface-variant leading-relaxed">
           Remove this budget protocol? This action is permanent and will clear all associated limits.
         </p>
-        <div className="flex justify-end gap-2 mt-1">
+        <div className="flex justify-end gap-2 mt-1" onPointerDownCapture={(e) => e.stopPropagation()}>
           <button onClick={() => toast.dismiss(t.id)} className="text-[10px] font-bold text-on-surface-variant hover:text-on-surface transition-all">Cancel</button>
           <button
             onClick={async () => {

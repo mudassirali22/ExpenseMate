@@ -319,7 +319,7 @@ const Transactions = () => {
         <p className="text-[11px] font-medium text-on-surface-variant leading-relaxed">
           Remove this record? This will permanently erase the <span className="text-error font-bold">{item.title}</span> entry from your vault.
         </p>
-        <div className="flex justify-end gap-2 mt-1">
+        <div className="flex justify-end gap-2 mt-1" onPointerDownCapture={(e) => e.stopPropagation()}>
           <button onClick={() => toast.dismiss(t.id)} className="text-[10px] font-bold text-on-surface-variant hover:text-on-surface transition-all">Cancel</button>
           <button
             onClick={async () => {

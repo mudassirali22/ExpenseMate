@@ -160,7 +160,7 @@ const Notes = () => {
         <p className="text-[11px] font-medium text-on-surface-variant leading-relaxed">
           Permanent removal? This action cannot be reversed and will clear the {type === 'note' ? 'note' : 'reminder'} from your database.
         </p>
-        <div className="flex justify-end gap-2 mt-1">
+        <div className="flex justify-end gap-2 mt-1" onPointerDownCapture={(e) => e.stopPropagation()}>
           <button onClick={() => toast.dismiss(t.id)} className="text-[10px] font-bold text-on-surface-variant hover:text-on-surface transition-all">Cancel</button>
           <button
             onClick={async () => {

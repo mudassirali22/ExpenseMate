@@ -169,7 +169,7 @@ const SharedWallets = () => {
               You already paid your part ({currencySymbol} {fairShare.toLocaleString()}).
               Paying extra will make the pool bigger.
             </p>
-            <div className="flex justify-end gap-2 mt-1">
+            <div className="flex justify-end gap-2 mt-1" onPointerDownCapture={(e) => e.stopPropagation()}>
               <button onClick={() => toast.dismiss(t.id)} className="text-[10px] font-bold text-on-surface-variant hover:text-on-surface transition-colors">Cancel</button>
               <button
                 onClick={() => {

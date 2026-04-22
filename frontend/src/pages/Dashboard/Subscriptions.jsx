@@ -174,7 +174,7 @@ const Subscriptions = () => {
         <p className="text-[11px] font-medium text-on-surface-variant leading-relaxed">
           Unsubscribe from <span className="text-error font-bold">{sub.name}</span>? This will permanently remove the record from your vault.
         </p>
-        <div className="flex justify-end gap-2 mt-1">
+        <div className="flex justify-end gap-2 mt-1" onPointerDownCapture={(e) => e.stopPropagation()}>
           <button onClick={() => toast.dismiss(t.id)} className="text-[10px] font-bold text-on-surface-variant hover:text-on-surface transition-all">Cancel</button>
           <button
             onClick={async () => {
