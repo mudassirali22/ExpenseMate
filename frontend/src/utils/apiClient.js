@@ -9,13 +9,18 @@ const apiFetch = async (endpoint, options = {}) => {
 
   // Don't set Content-Type for FormData — browser adds it with multipart boundary automatically
   const isFormData = options.body instanceof FormData;
+  const token = localStorage.getItem('token');
 
   const defaultOptions = {
     credentials: 'include',
     ...options,
     headers: isFormData
-      ? { ...options.headers }
-      : { 'Content-Type': 'application/json', ...options.headers },
+      ? { ...(token ? { Authorization: `Bearer ${token}` } : {}), ...options.headers }
+      : {
+          'Content-Type': 'application/json',
+          ...(token ? { Authorization: `Bearer ${token}` } : {}),
+          ...options.headers,
+        },
   };
 
   try {

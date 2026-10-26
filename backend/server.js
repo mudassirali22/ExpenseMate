@@ -43,10 +43,18 @@ app.use((req, res, next) => {
 app.use(express.json());
 app.use(cookieParser());
 
-connectDB();
-
 app.get("/", (req, res) => {
   res.send("ExpenseMate API v2.0 — Luminescent Ledger");
+});
+
+app.use("/api/v1", async (req, res, next) => {
+  try {
+    await connectDB();
+    next();
+  } catch (error) {
+    console.error("Database connection failed:", error.message);
+    res.status(503).json({ message: "Database is unavailable. Please try again shortly." });
+  }
 });
 
 app.use("/api/v1", apiRoutes);

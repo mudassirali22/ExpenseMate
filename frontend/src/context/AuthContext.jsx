@@ -17,6 +17,12 @@ export const AuthProvider = ({ children }) => {
   const API = import.meta.env.VITE_BACKEND_URL;
 
   const checkAuth = useCallback(async () => {
+    if (!localStorage.getItem('token')) {
+      setUser(null);
+      setLoading(false);
+      return;
+    }
+
     try {
       const data = await apiClient.get('/api/v1/auth/me');
       setUser(data.user || data);
