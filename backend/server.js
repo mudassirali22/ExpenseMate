@@ -10,15 +10,16 @@ const app = express();
 
 const allowedOrigins = [
   "https://ExpenseMate.onrender.com",
+  "https://expensemate-three.vercel.app",
   "http://localhost:5173",
   "http://localhost:5174",
   process.env.CLIENT_URL,
-].filter(Boolean);
+].filter(Boolean).map((origin) => origin.replace(/\/+$/, ""));
 
 app.use(cors({
   origin: function (origin, callback) {
     if (!origin) return callback(null, true);
-    if (allowedOrigins.indexOf(origin) !== -1 || allowedOrigins.includes(origin.replace(/\/$/, ""))) {
+    if (allowedOrigins.includes(origin.replace(/\/+$/, ""))) {
       callback(null, true);
     } else {
       console.log(`[CORS Blocked] Origin: ${origin}`);
